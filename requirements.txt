@@ -1,0 +1,5 @@
+ImageHash==4.2.0
+moviepy==1.0.3
+scenedetect==0.5.4.1
+numpy==1.19.3
+Pillow==8.0.1
