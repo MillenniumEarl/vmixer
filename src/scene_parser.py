@@ -60,7 +60,8 @@ def _create_scenes_map(reference_data: List[SceneData], compare_data: List[Scene
     
     # Local variables
     scene_map = []
-    cmp_first_index = 0
+    cmp_first_index = -1
+    cmp_last_index = 0
 
     # Obtains all the scenes in the reference video 
     # and the common scenes between the videos
@@ -80,17 +81,27 @@ def _create_scenes_map(reference_data: List[SceneData], compare_data: List[Scene
             # Save the index that will be later used to 
             # split the compared video data
             index = compare_data.index(results[0])
-            if index > cmp_first_index:
-                cmp_first_index = index
+            if cmp_first_index == -1: cmp_first_index = index
+            if index > cmp_last_index:
+                cmp_last_index = index
 
         scene_map.append(pair)
 
     # Obtains all the scenes in the comparison video 
     # that are NOT in the reference video
-    remainings = compare_data[cmp_first_index + 1:]
-    for data in remainings:
-        (path, _, _) = data
-        scene_map.append((None, path))
+    
+    if cmp_first_index != 0:
+        remainings = compare_data[:cmp_first_index - 1]
+        remainings.reverse()
+        for data in remainings:
+            (path, _, _) = data
+            scene_map.insert(0, (None, path))
+    
+    if len(compare_data) > cmp_last_index + 1:
+        remainings = compare_data[cmp_last_index + 1:]
+        for data in remainings:
+            (path, _, _) = data
+            scene_map.append((None, path))
     
     return scene_map
 
@@ -261,9 +272,8 @@ def sync_scenes(reference_data: List[SceneData], compare_data: List[SceneData], 
         first_clip.close()
         second_clip.close()
         
-        # Remove the paths from the list
-        merge_paths.remove(merge_paths[0])
-        merge_paths.remove(merge_paths[1])
+        # Remove the first two paths from the list
+        merge_paths = merge_paths[2::]
         
         # Add the merged path as first item in the list
         merge_paths.insert(0, tmp_dest)
