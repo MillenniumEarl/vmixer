@@ -11,6 +11,7 @@ from scenedetect import SceneManager
 from scenedetect import video_splitter
 from scenedetect.detectors import ContentDetector
 from moviepy.editor import VideoFileClip, concatenate_videoclips
+from joblib import Parallel, delayed
 
 # Project imports
 from .video_utility import whash_video, compare_video, sync_video
@@ -19,8 +20,30 @@ from .utility import compare_videohash
 # Aliases and types
 FrameHash = Tuple[float, str]
 SceneData = Tuple[str, int, List[FrameHash]]
+SceneHash = Tuple[str, int, List[FrameHash]]
 ComparationResult = Tuple[float, List[Tuple[str, str]]]
 ScenePairPath = Tuple[str, str]
+
+
+def _hash_scene(filename:str) -> SceneHash:
+    """Hash a scene (video) and return its data
+
+    Args:
+        filename (str): Path to the video
+
+    Returns:
+        SceneHash: Tuple in the format(scene path, scene index, scene hash)
+    """
+    
+    # Get the index of the scene in the video
+    scene_name = os.path.splitext(os.path.basename(filename))[0]
+    index = int(scene_name)
+    
+    # Hash the scene
+    hash = whash_video(filename)
+    
+    return (filename, index, hash)
+
 
 def _create_scenes_map(reference_data: List[SceneData], compare_data: List[SceneData]) -> List[ScenePairPath]:
     """Create the sorted list of scenes to merge to get the final video
@@ -96,7 +119,7 @@ def find_scenes(video_path:str, threshold=30.0) -> List:
 
     # Start the video manager and perform the scene detection.
     video_manager.start()
-    scene_manager.detect_scenes(frame_source=video_manager, show_progress=False)
+    scene_manager.detect_scenes(frame_source=video_manager, show_progress=True)
 
     # Each returned scene is a tuple of the (start, end) timecode.
     return scene_manager.get_scene_list(base_timecode)
@@ -113,9 +136,6 @@ def extract_scenes(video_path: str, output_dir: str, threshold=10.0) -> List[Sce
     Returns:
         list[SceneData]: List of tuple in the format (scene path, scene index, perceptual first frame hash)
     """
-
-    # Local variables
-    hash_list = []
     
     # Extract the video name
     filename = os.path.basename(video_path)
@@ -142,17 +162,13 @@ def extract_scenes(video_path: str, output_dir: str, threshold=10.0) -> List[Sce
             os.path.join(output_dir, '$SCENE_NUMBER.mp4'),
             '', # Video name is blank because is not needed
             arg_override='-c:v libx264 -preset ultrafast -crf 21 -c:a aac', # Changed only the preset
-            hide_progress=True,
+            hide_progress=False,
             suppress_output=True)
 
     # Calculate hash list
     pattern = os.path.join(output_dir, '*.mp4')
-    for path in glob.glob(pattern):
-        scene_name = os.path.splitext(os.path.basename(path))[0]
-        hash = whash_video(path)
-        index = int(scene_name)
-        hash_list.append((path, index, hash))
-
+    hash_list = Parallel(n_jobs=-1, backend='threading')(delayed(_hash_scene)(path)
+                                                         for path in glob.glob(pattern))
     return hash_list
 
 
@@ -218,10 +234,11 @@ def sync_scenes(reference_data: List[SceneData], compare_data: List[SceneData], 
         if first_path is None: merge_paths.append(second_path)
         elif second_path is None: merge_paths.append(first_path)
         else:
-            tmp_dest = os.path.join(tempfile.mkdtemp(), 'merged.mp4')
+            tmp_dir = tempfile.mkdtemp()
+            tmp_dest = os.path.join(tmp_dir, 'merged.mp4')
+            temp_video.append(tmp_dir)
             if sync_video(first_path, second_path, tmp_dest):
                 merge_paths.append(tmp_dest)
-                temp_video.append(tmp_dest)
         
     # Merge all clips in a single video
     while len(merge_paths) > 1:
@@ -229,9 +246,14 @@ def sync_scenes(reference_data: List[SceneData], compare_data: List[SceneData], 
         first_clip = VideoFileClip(merge_paths[0])
         second_clip = VideoFileClip(merge_paths[1])
         
+        # Create temp directory
+        tmp_dir = tempfile.mkdtemp()
+        tmp_dest = os.path.join(tmp_dir, 'merged.mp4')
+        temp_video.append(tmp_dir)
+        
         # Merge two clips
         final = concatenate_videoclips([first_clip, second_clip], method='compose')
-        final.write_videofile(dest, preset='fast', threads=2,
+        final.write_videofile(tmp_dest, preset='fast', threads=2,
                             verbose=False, logger=None)
         final.close()
         
@@ -244,8 +266,11 @@ def sync_scenes(reference_data: List[SceneData], compare_data: List[SceneData], 
         merge_paths.remove(merge_paths[1])
         
         # Add the merged path as first item in the list
-        merge_paths.insert(0, dest)
+        merge_paths.insert(0, tmp_dest)
+        
+    # Copy the final video
+    shutil.move(merge_paths[0], dest)
           
-    # Delete all the merged videos
+    # Delete all the merged video directories
     for path in temp_video:
-        os.remove(path)
+        shutil.rmtree(path)
