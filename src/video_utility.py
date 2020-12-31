@@ -52,19 +52,35 @@ def compare_video(reference_path:str, video_path:str, frame_skip=5) -> float:
     Returns:
         float: Similairty of the videos (from 0.0 to 1.0)
     """
-    # Local variables
-    count = 0
-
+    
     # Obtains the hash of the frames in the videos
     reference_hash_list = whash_video(reference_path, frame_skip)
     video_hash_list = whash_video(video_path, frame_skip)
 
+    # Compare hashes
+    return compare_video_hash(reference_hash_list, video_hash_list)
+
+
+def compare_video_hash(reference_hash_list: List[FrameHash], compare_hash_list: List[FrameHash]) -> float:
+    """It compares the perceptual hashes of two videos 
+        and returns a similarity index between 0 and 1
+
+    Args:
+        reference_hash_list (List[FrameHash]): Hash of the reference video
+        compare_hash_list (List[FrameHash]): Hash of the video to compare
+
+    Returns:
+        float: Video similarity index. Between 0 and 1
+    """
+    
+    # Local variables
+    count = 0
+    
     # Search for video hash in the reference_hash_list
-    for data in video_hash_list:
+    for data in compare_hash_list:
         (timestamp, hash) = data
         results = [item for item in reference_hash_list if hash in item]
-        if len(results) > 0:
-            count += 1
+        count += len(results)
 
     return count / len(reference_hash_list)
 
