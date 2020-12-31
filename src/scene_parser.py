@@ -181,6 +181,7 @@ def sync_scenes(reference_data: List[SceneData], compare_data: List[SceneData], 
     # Local variables
     scene_map = _create_scenes_map(reference_data, compare_data)
     merge_clips = []
+    temp_video = []
 
     for pair in scene_map:
         # In-loop variables
@@ -196,7 +197,9 @@ def sync_scenes(reference_data: List[SceneData], compare_data: List[SceneData], 
         else:
             tmp_dest = os.path.join(tempfile.mkdtemp(), 'merged.mp4')
             if sync_video(first_path, second_path, tmp_dest):
+                # Load the clip and save the path
                 clip = VideoFileClip(tmp_dest)
+                temp_video.append(tmp_dest)
         
         # Add clip to list of merged clips
         if clip is not None:
@@ -211,3 +214,7 @@ def sync_scenes(reference_data: List[SceneData], compare_data: List[SceneData], 
     # Close all the clips
     for clip in merge_clips:
         clip.close()
+        
+    # Delete all the merged videos
+    for path in temp_video:
+        os.remove(path)
