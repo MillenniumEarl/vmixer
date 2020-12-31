@@ -10,7 +10,7 @@ from .scene_parser import extract_scenes, compare_scenes, sync_scenes
 # Aliases and types
 FrameHash = Tuple[float, str]
 
-def video_similarity(reference_path:str, comparative_path:str, threshold=6.0) -> float:
+def video_similarity(reference_path:str, comparative_path:str, threshold=10.0) -> float:
     """Compare two videos to find similarities. Returns a value 
         between 0 and 1, where 0 indicates no similarity and 1 returns equality
 
@@ -22,7 +22,7 @@ def video_similarity(reference_path:str, comparative_path:str, threshold=6.0) ->
         comparative_path (str): Path of the video to compare
         threshold (float, optional): Threshold used to detect scene change. 
                                     The smaller it is, the more scenes are detected. 
-                                    Defaults to 6.0.
+                                    Defaults to 10.0.
 
     Returns:
         float: Similarity of videos, value between 0 and 1
