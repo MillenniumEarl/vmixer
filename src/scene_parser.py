@@ -251,35 +251,25 @@ def sync_scenes(reference_data: List[SceneData], compare_data: List[SceneData], 
             if sync_video(first_path, second_path, tmp_dest):
                 merge_paths.append(tmp_dest)
         
+    # Get the first path and remove it from list
+    first_path = merge_paths[0]
+    merge_paths.remove(first_path)
+    
     # Merge all clips in a single video
-    while len(merge_paths) > 1:
-        # Load first two clips
-        first_clip = VideoFileClip(merge_paths[0])
-        second_clip = VideoFileClip(merge_paths[1])
-        
-        # Create temp directory
-        tmp_dir = tempfile.mkdtemp()
-        tmp_dest = os.path.join(tmp_dir, 'merged.mp4')
-        temp_video.append(tmp_dir)
+    final_clip = VideoFileClip(first_path)
+    for path in merge_paths:
+        # Read the clip
+        clip = VideoFileClip(path)
         
         # Merge two clips
-        final = concatenate_videoclips([first_clip, second_clip], method='compose')
-        final.write_videofile(tmp_dest, preset='fast', threads=2,
-                            verbose=False, logger=None)
-        final.close()
+        final_clip = concatenate_videoclips([final_clip, clip], method='compose')
         
-        # Close clips
-        first_clip.close()
-        second_clip.close()
-        
-        # Remove the first two paths from the list
-        merge_paths = merge_paths[2::]
-        
-        # Add the merged path as first item in the list
-        merge_paths.insert(0, tmp_dest)
-        
-    # Copy the final video
-    shutil.move(merge_paths[0], dest)
+        # Close the clip
+        # clip.close() Give error on write_videofile
+    
+    # Save the final clip to disk
+    final_clip.write_videofile(dest, threads=4, verbose=False, logger=None)
+    final_clip.close()
           
     # Delete all the merged video directories
     for path in temp_video:
