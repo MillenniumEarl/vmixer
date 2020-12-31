@@ -23,7 +23,18 @@ ComparationResult = Tuple[float, List[Tuple[str, str]]]
 ScenePairPath = Tuple[str, str]
 
 def _create_scenes_map(reference_data: List[SceneData], compare_data: List[SceneData]) -> List[ScenePairPath]:
+    """Create the sorted list of scenes to merge to get the final video
 
+    Args:
+        reference_data (List[SceneData]): List of scene data of the reference video
+        compare_data (List[SceneData]): List of data related to the scenes of the comparison video
+
+    Returns:
+        List[ScenePairPath]: Ordered list of tuples, each containing the video path 
+                            to include in the final video. If the tuple contains two paths, 
+                            the related videos must be merged
+    """
+    
     # Local variables
     scene_map = []
     cmp_first_index = 0

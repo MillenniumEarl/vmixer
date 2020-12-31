@@ -52,12 +52,20 @@ def np_whash(array:np.array, scale=2) -> str:
     return str(hash)
 
 
-def np_md5(array) -> str:
-    a = array.view(np.uint8)
-    return hashlib.md5(a).hexdigest()
+def compare_videohash(ref_hash_list: List[FrameHash], cmp_hash_list: List[FrameHash], threshold=0.1) -> bool:
+    """Compare the hashes of two videos to determine if they are similar
 
+    Args:
+        ref_hash_list (List[FrameHash]): Reference video hash list
+        cmp_hash_list (List[FrameHash]): Comparison video hash list
+        threshold (float, optional): Value above which to consider two hash lists 
+                                    (and consequently two videos) similar. 
+                                    Defaults to 0.1.
 
-def compare_videohash(ref_hash_list: List[FrameHash], cmp_hash_list: List[FrameHash], threshold=0.1):
+    Returns:
+        bool: True if the two videos are similar, False otherwise
+    """
+    
     # Local variables
     count = 0
 
