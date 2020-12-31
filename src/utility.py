@@ -57,14 +57,17 @@ def np_md5(array) -> str:
     return hashlib.md5(a).hexdigest()
 
 
-def compare_videohash(ref_hash_list: List[FrameHash], cmp_hash_list: List[FrameHash], threshold=0.7):
+def compare_videohash(ref_hash_list: List[FrameHash], cmp_hash_list: List[FrameHash], threshold=0.1):
     # Local variables
     count = 0
 
     for a in cmp_hash_list:
         (_, cmp_hash) = a
         results = [item for item in ref_hash_list if cmp_hash in item]
-        count += len(results)
+        if len(results) > 0:
+            count += 1
 
     similarity = count / len(ref_hash_list)
-    return similarity >= threshold
+    similarity = min(similarity, 1.0)
+
+    return similarity > threshold
