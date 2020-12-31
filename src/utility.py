@@ -44,7 +44,7 @@ def np_whash(array:np.array, scale=1.5) -> str:
     image = Image.fromarray(np.uint8(array))
 
     # Resize the image
-    (width, height) = (image.width // scale, image.height // scale)
+    (width, height) = (int(image.width // scale), int(image.height // scale))
     image = image.resize((width, height))
 
     # Calculate hash
