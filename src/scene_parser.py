@@ -33,6 +33,7 @@ def find_scenes(video_path:str, threshold=30.0) -> List:
     Returns:
         list: List of tuple, each one rapresenting a single scene
     """
+    
     # Create our video & scene managers, then add the detector.
     video_manager = VideoManager([video_path])
     scene_manager = SceneManager()
@@ -131,6 +132,7 @@ def compare_scenes(reference_data: List[SceneData], compare_data: List[SceneData
 
     # Calculate similarity (how many files are similar)
     similarity = count / len(reference_data)
+    similarity = min(similarity, 1.0)
 
     return (similarity, pairs)
 
@@ -193,11 +195,12 @@ def sync_scenes(reference_data: List[SceneData], compare_data: List[SceneData], 
             clip = VideoFileClip(first_path)
         else:
             tmp_dest = os.path.join(tempfile.mkdtemp(), 'merged.mp4')
-            sync_video(first_path, second_path, tmp_dest)
-            clip = VideoFileClip(tmp_dest)
+            if sync_video(first_path, second_path, tmp_dest):
+                clip = VideoFileClip(tmp_dest)
         
         # Add clip to list of merged clips
-        merge_clips.append(clip)
+        if clip is not None:
+            merge_clips.append(clip)
         
     # Merge all clips in a single video
     final = concatenate_videoclips(merge_clips, method='compose')
