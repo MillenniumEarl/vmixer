@@ -4,8 +4,8 @@ import tempfile
 from typing import List
 
 # Project modules
-from video_utility import sync_video, whash_video
-from scene_parser import extract_scenes, compare_scenes, sync_scenes
+from .video_utility import sync_video, whash_video
+from .scene_parser import extract_scenes, compare_scenes, sync_scenes
 
 
 def video_similarity(reference_path:str, comparative_path:str, threshold=6.0) -> float:

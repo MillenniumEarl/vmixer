@@ -12,8 +12,11 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/MillenniumEarl/vmixer",
     packages=setuptools.find_packages(),
+    package_dir={'': 'src'},
     license="MIT",
     classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Developers',
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",

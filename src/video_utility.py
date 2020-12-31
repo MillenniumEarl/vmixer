@@ -5,7 +5,7 @@ from typing import Tuple, List
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 
 # Project modules
-from utility import np_whash, np_md5, compare_videohash
+from .utility import np_whash, np_md5, compare_videohash
 
 # Aliases and types
 FrameHash = Tuple[float, str]

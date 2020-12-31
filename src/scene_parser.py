@@ -13,8 +13,8 @@ from scenedetect.detectors import ContentDetector
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 
 # Project imports
-from video_utility import whash_video, compare_video, sync_video
-from utility import compare_videohash
+from .video_utility import whash_video, compare_video, sync_video
+from .utility import compare_videohash
 
 # Aliases and types
 FrameHash = Tuple[float, str]

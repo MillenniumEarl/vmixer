@@ -2,7 +2,7 @@
 import os
 
 # Project modules
-from main import video_similarity, video_merge
+from src.__init__ import video_similarity, video_merge
 
 # Constants
 REFERENCE_FILE = os.path.join('test', 'C', 'cut1.mp4')
