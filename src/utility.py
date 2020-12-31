@@ -29,12 +29,12 @@ def md5(filename:str)->str:
     return hash_md5.hexdigest()
 
 
-def np_whash(array:np.array, scale=1.5) -> str:
+def np_whash(array:np.array, scale=2) -> str:
     """Calculate the wavelenghted perceptual hash of a numpy array (image)
 
     Args:
         array (np.array): Numpy array to hash
-        scale (float): Scale reduction of the image. Default to 1.5
+        scale (float): Scale reduction of the image. Default to 2
 
     Returns:
         str: Perceptual hash
