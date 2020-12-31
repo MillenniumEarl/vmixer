@@ -157,7 +157,7 @@ def compare_video_hash(reference_hash_list: List[FrameHash], compare_hash_list: 
     
     # Search for video hash in the reference_hash_list
     for data in compare_hash_list:
-        (timestamp, hash) = data
+        (_, hash) = data
         results = [item for item in reference_hash_list if hash in item]
         if len(results) > 0:
             count += 1
