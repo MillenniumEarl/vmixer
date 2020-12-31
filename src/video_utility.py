@@ -12,12 +12,12 @@ FrameHash = Tuple[float, str]
 TimeFrame = Tuple[float, List]
 
 
-def _get_frame_list(filepath:str, n=5) -> List[TimeFrame]:
+def _get_frame_list(filepath:str, n=4) -> List[TimeFrame]:
     """Gets frames from a video file
 
     Args:
         filepath (str): Path to video
-        n (int, optional): Number of frames each to process a frame. Defaults to 5.
+        n (int, optional): Number of frames each to process a frame. Defaults to 4.
 
     Returns:
         List[TimeFrame]: List of tuples in the form (timestamp, frame)
@@ -29,7 +29,9 @@ def _get_frame_list(filepath:str, n=5) -> List[TimeFrame]:
     
     with VideoFileClip(filepath) as clip:
         # Find the time interval after which to get a frame
-        time_slice = clip.duration / n
+        frames = int(clip.fps * clip.duration)
+        time_for_frame = clip.duration / frames
+        time_slice = time_for_frame * n
         
         while t < clip.duration:
             # Get frame at current time
@@ -46,7 +48,7 @@ def _get_frame_list(filepath:str, n=5) -> List[TimeFrame]:
 
 def _find_sync_point(reference_data:List[FrameHash], 
                     compare_data:List[FrameHash], 
-                    matching_frames=15) -> Tuple[FrameHash, FrameHash]:
+                    matching_frames=7) -> Tuple[FrameHash, FrameHash]:
     """Find the point to join two videos with the same frames
 
     Args:
@@ -54,7 +56,7 @@ def _find_sync_point(reference_data:List[FrameHash],
         compare_data (list[FrameHash]): List of hashes of frames of the compared video
         matching_frames (int, optional): Number of frames that must be 
                                         consecutively equal in order to consider 
-                                        the synchronization point. Defaults to 15.
+                                        the synchronization point. Defaults to 7.
 
     Returns:
         tuple[FrameHash, FrameHash]: Synchronization point, the first element refers 
@@ -127,7 +129,7 @@ def compare_video(reference_path:str, video_path:str, frame_skip=5) -> float:
         frame_skip (int, optional): Every how many frames calculate a hash. Defaults to 5.
 
     Returns:
-        float: Similairty of the videos (from 0.0 to 1.0)
+        float: Similarity of the videos (from 0.0 to 1.0)
     """
     
     # Obtains the hash of the frames in the videos
@@ -157,9 +159,11 @@ def compare_video_hash(reference_hash_list: List[FrameHash], compare_hash_list: 
     for data in compare_hash_list:
         (timestamp, hash) = data
         results = [item for item in reference_hash_list if hash in item]
-        count += len(results)
+        if len(results) > 0:
+            count += 1
 
-    return count / len(reference_hash_list)
+    similarity = count / len(reference_hash_list)
+    return min(similarity, 1.0)
 
 
 def sync_video(reference_path:str, compare_path:str, dest:str) -> bool:
