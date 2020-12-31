@@ -22,6 +22,44 @@ SceneData = Tuple[str, int, List[FrameHash]]
 ComparationResult = Tuple[float, List[Tuple[str, str]]]
 ScenePairPath = Tuple[str, str]
 
+def _create_scenes_map(reference_data: List[SceneData], compare_data: List[SceneData]) -> List[ScenePairPath]:
+
+    # Local variables
+    scene_map = []
+    cmp_first_index = 0
+
+    # Obtains all the scenes in the reference video 
+    # and the common scenes between the videos
+    for data in reference_data:
+        (path, _, hash) = data
+        results = [item for item in compare_data if compare_videohash(hash, item[2])]
+
+        pair = (None, None)
+        if len(results) == 0:
+            # Scene in the reference video but NOT in the compare video
+            pair = (path, None)
+        else: 
+            # Scene in both the videos, will be merged later
+            (cmp_path, _, _) = results[0]
+            pair = (path, cmp_path)
+
+            # Save the index that will be later used to 
+            # split the compared video data
+            index = compare_data.index(results[0])
+            if index > cmp_first_index:
+                cmp_first_index = index
+
+        scene_map.append(pair)
+
+    # Obtains all the scenes in the comparison video 
+    # that are NOT in the reference video
+    remainings = compare_data[cmp_first_index + 1:]
+    for data in remainings:
+        (path, _, _) = data
+        scene_map.append((None, path))
+    
+    return scene_map
+
 
 def find_scenes(video_path:str, threshold=30.0) -> List:
     """Find all the scenes in a video.
@@ -107,7 +145,18 @@ def extract_scenes(video_path: str, output_dir: str, threshold=10.0) -> List[Sce
     return hash_list
 
 
-def compare_scenes(reference_data: List[SceneData], compare_data: List[SceneData], threshold=5) -> ComparationResult:
+def compare_scenes(reference_data: List[SceneData], compare_data: List[SceneData]) -> ComparationResult:
+    """Compare the scenes that make up a video by returning 
+        a similarity index between 0 and 1 and the list 
+        of similar scenes
+
+    Args:
+        reference_data (List[SceneData]): List of scene data of the reference video
+        compare_data (List[SceneData]): List of data related to the scenes of the comparison video
+
+    Returns:
+        ComparationResult: Tuple in the format (similarity, list of pairs of similar scenes]
+    """
     
     # Local variables
     count = 0
@@ -137,47 +186,15 @@ def compare_scenes(reference_data: List[SceneData], compare_data: List[SceneData
     return (similarity, pairs)
 
 
-def _create_scenes_map(reference_data: List[SceneData], compare_data: List[SceneData]) -> List[ScenePairPath]:
-
-    # Local variables
-    scene_map = []
-    cmp_first_index = 0
-
-    # Obtains all the scenes in the reference video 
-    # and the common scenes between the videos
-    for data in reference_data:
-        (path, _, hash) = data
-        results = [item for item in compare_data if compare_videohash(hash, item[2])]
-
-        pair = (None, None)
-        if len(results) == 0:
-            # Scene in the reference video but NOT in the compare video
-            pair = (path, None)
-        else: 
-            # Scene in both the videos, will be merged later
-            (cmp_path, _, _) = results[0]
-            pair = (path, cmp_path)
-
-            # Save the index that will be later used to 
-            # split the compared video data
-            index = compare_data.index(results[0])
-            if index > cmp_first_index:
-                cmp_first_index = index
-
-        scene_map.append(pair)
-
-    # Obtains all the scenes in the comparison video 
-    # that are NOT in the reference video
-    remainings = compare_data[cmp_first_index + 1:]
-    for data in remainings:
-        (path, _, _) = data
-        scene_map.append((None, path))
-    
-    return scene_map
-
-
 def sync_scenes(reference_data: List[SceneData], compare_data: List[SceneData], dest:str):
+    """Synchronize scenes belonging to two videos into a single video
 
+    Args:
+        reference_data (List[SceneData]): List of scene data of the reference video
+        compare_data (List[SceneData]): List of data related to the scenes of the comparison video
+        dest (str): Merged video path
+    """
+    
     # Local variables
     scene_map = _create_scenes_map(reference_data, compare_data)
     merge_paths = []
