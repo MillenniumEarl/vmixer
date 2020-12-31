@@ -9,6 +9,88 @@ from .utility import np_whash, np_md5, compare_videohash
 
 # Aliases and types
 FrameHash = Tuple[float, str]
+TimeFrame = Tuple[float, List]
+
+
+def _get_frame_list(filepath:str, n=5) -> List[TimeFrame]:
+    """Gets frames from a video file
+
+    Args:
+        filepath (str): Path to video
+        n (int, optional): Number of frames each to process a frame. Defaults to 5.
+
+    Returns:
+        List[TimeFrame]: List of tuples in the form (timestamp, frame)
+    """
+    
+    # Local variables
+    data = []
+    t = 0
+    
+    with VideoFileClip(filepath) as clip:
+        # Find the time interval after which to get a frame
+        time_slice = clip.duration / n
+        
+        while t < clip.duration:
+            # Get frame at current time
+            frame = clip.get_frame(t)
+            
+            # Save FrameHash
+            data.append((t, frame))
+            
+            # Increment time by time_slice
+            t += time_slice
+    
+    return data
+
+
+def _find_sync_point(reference_data:List[FrameHash], 
+                    compare_data:List[FrameHash], 
+                    matching_frames=15) -> Tuple[FrameHash, FrameHash]:
+    """Find the point to join two videos with the same frames
+
+    Args:
+        reference_data (list[FrameHash]): Frame hash list of the reference video
+        compare_data (list[FrameHash]): List of hashes of frames of the compared video
+        matching_frames (int, optional): Number of frames that must be 
+                                        consecutively equal in order to consider 
+                                        the synchronization point. Defaults to 15.
+
+    Returns:
+        tuple[FrameHash, FrameHash]: Synchronization point, the first element refers 
+                                    to the reference video while the second to the compared video.
+                                    If the point is not found, it returns None
+    """
+    # Local variables
+    sync_point = None
+    sync_count = 0
+
+    for i in reference_data:
+        (ref_ts, ref_hash) = i
+
+        # Check if the number of sync frames are enough
+        if sync_count == matching_frames: break
+
+        for cmp in compare_data:
+            (ts, hash) = cmp
+
+            # Check if the number of sync frames are enough
+            if sync_count == matching_frames: break
+
+            if ref_hash == hash:
+                # Assig the sync point (if not exists)
+                if sync_point is None:
+                    sync_point = (i, cmp)
+
+                # Increment counter
+                sync_count += 1
+            else:
+                # Frames mismatch, this is not a sync point
+                # reset the values
+                sync_point = None
+                sync_count = 0
+    
+    return sync_point
 
 
 def whash_video(filepath:str, frame_skip=5) -> List[FrameHash]:
@@ -23,19 +105,14 @@ def whash_video(filepath:str, frame_skip=5) -> List[FrameHash]:
     """
 
     # Local variables
+    data_list = []
     tuple_list = []
-    count = 0
-
-    # Read video
-    with VideoFileClip(filepath) as clip:
-        # Obtains both the frame and the timestamp of it
-        for data in clip.iter_frames(with_times=True, dtype='uint8'):
-            # Elaborate only every frame_skip frames
-            if(count % frame_skip == 0):
-                (time, frame) = data
-                hash = np_whash(frame)
-                tuple_list.append((time, hash))
-            count += 1
+    
+    # Obtains both the frame and the timestamp of it
+    for data in _get_frame_list(filepath, frame_skip):
+        (timestamp, frame) = data
+        hash = np_whash(frame)
+        tuple_list.append((timestamp, hash))
 
     return tuple_list
 
@@ -83,55 +160,6 @@ def compare_video_hash(reference_hash_list: List[FrameHash], compare_hash_list: 
         count += len(results)
 
     return count / len(reference_hash_list)
-
-
-def _find_sync_point(reference_data:List[FrameHash], 
-                    compare_data:List[FrameHash], 
-                    matching_frames=5) -> Tuple[FrameHash, FrameHash]:
-    """[summary]
-
-    Args:
-        reference_data (list[FrameHash]): Frame hash list of the reference video
-        compare_data (list[FrameHash]): List of hashes of frames of the compared video
-        matching_frames (int, optional): Number of frames that must be 
-                                        consecutively equal in order to consider 
-                                        the synchronization point. Defaults to 5.
-
-    Returns:
-        tuple[FrameHash, FrameHash]: Synchronization point, the first element refers 
-                                    to the reference video while the second to the compared video.
-                                    If the point is not found, it returns None
-    """
-    # Local variables
-    sync_point = None
-    sync_count = 0
-
-    for i in reference_data:
-        (ref_ts, ref_hash) = i
-
-        # Check if the number of sync frames are enough
-        if sync_count == matching_frames: break
-
-        for cmp in compare_data:
-            (ts, hash) = cmp
-
-            # Check if the number of sync frames are enough
-            if sync_count == matching_frames: break
-
-            if ref_hash == hash:
-                # Assig the sync point (if not exists)
-                if sync_point is None:
-                    sync_point = (i, cmp)
-
-                # Increment counter
-                sync_count += 1
-            else:
-                # Frames mismatch, this is not a sync point
-                # reset the values
-                sync_point = None
-                sync_count = 0
-    
-    return sync_point
 
 
 def sync_video(reference_path:str, compare_path:str, dest:str) -> bool:
