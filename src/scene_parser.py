@@ -180,41 +180,44 @@ def sync_scenes(reference_data: List[SceneData], compare_data: List[SceneData], 
 
     # Local variables
     scene_map = _create_scenes_map(reference_data, compare_data)
-    merge_clips = []
+    merge_paths = []
     temp_video = []
 
     for pair in scene_map:
-        # In-loop variables
-        clip = None
-
         # Unpack the paths
         (first_path, second_path) = pair
 
-        if first_path is None:
-            clip = VideoFileClip(second_path)
-        elif second_path is None:
-            clip = VideoFileClip(first_path)
+        if first_path is None: merge_paths.append(second_path)
+        elif second_path is None: merge_paths.append(first_path)
         else:
             tmp_dest = os.path.join(tempfile.mkdtemp(), 'merged.mp4')
             if sync_video(first_path, second_path, tmp_dest):
-                # Load the clip and save the path
-                clip = VideoFileClip(tmp_dest)
+                merge_paths.append(tmp_dest)
                 temp_video.append(tmp_dest)
         
-        # Add clip to list of merged clips
-        if clip is not None:
-            merge_clips.append(clip)
-        
     # Merge all clips in a single video
-    final = concatenate_videoclips(merge_clips, method='compose')
-    final.write_videofile(dest, preset='fast', threads=4,
-                          verbose=False, logger=None)
-    final.close()
-
-    # Close all the clips
-    for clip in merge_clips:
-        clip.close()
+    while len(merge_paths) > 1:
+        # Load first two clips
+        first_clip = VideoFileClip(merge_paths[0])
+        second_clip = VideoFileClip(merge_paths[1])
         
+        # Merge two clips
+        final = concatenate_videoclips([first_clip, second_clip], method='compose')
+        final.write_videofile(dest, preset='fast', threads=2,
+                            verbose=False, logger=None)
+        final.close()
+        
+        # Close clips
+        first_clip.close()
+        second_clip.close()
+        
+        # Remove the paths from the list
+        merge_paths.remove(merge_paths[0])
+        merge_paths.remove(merge_paths[1])
+        
+        # Add the merged path as first item in the list
+        merge_paths.insert(0, dest)
+          
     # Delete all the merged videos
     for path in temp_video:
         os.remove(path)
