@@ -64,8 +64,7 @@ def compare_videohash(ref_hash_list: List[FrameHash], cmp_hash_list: List[FrameH
     for a in cmp_hash_list:
         (_, cmp_hash) = a
         results = [item for item in ref_hash_list if cmp_hash in item]
-        if len(results) >= 1:
-            count += 1
+        count += len(results)
 
     similarity = count / len(ref_hash_list)
     return similarity >= threshold
