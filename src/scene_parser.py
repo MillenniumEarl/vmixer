@@ -180,34 +180,35 @@ def _create_scenes_map(reference_data: List[SceneData], compare_data: List[Scene
     return scene_map
 
 
-def find_optimal_threshold(filename, sec_for_scene=1.5):    
+def find_optimal_threshold(filename, sec_for_scene=1.5):
     # Local variables
     BASE_THRESHOLD = 5.0
     content_val_list = []
     framerate = 0
-    
+
     # Load cache
     filehash = md5(filename)
     cache_file = os.path.join(cache_dir, f'{filehash}.csv')
-        
+
     # If the cache doesn't exists, it will be created
-    if not os.path.exists(cache_file): find_scenes(filename)
-        
+    if not os.path.exists(cache_file):
+        find_scenes(filename)
+
     # Read the CSV cache
     with open(cache_file, 'r') as f:
         framerate = float(f.readline().rstrip('\n').split(',')[1])
-        csv_file  = csv.DictReader(f)
+        csv_file = csv.DictReader(f)
         content_val_list = [float(row['content_val']) for row in csv_file]
 
     frames_per_scene = framerate * sec_for_scene
     desired_scenes = int(len(content_val_list) / frames_per_scene)
-    
+
     # Define the base values for the binary search
     max_threshold = max(content_val_list)
     base_threshold = 0
     optimal_threshold = max(content_val_list)
     last_delta = optimal_threshold
-    
+
     # Exit from the loop when we have reached a stale point
     while last_delta > 0.1:
         # Count the number of scenes available with this threshold
@@ -221,7 +222,7 @@ def find_optimal_threshold(filename, sec_for_scene=1.5):
             max_threshold = optimal_threshold
         elif available_scenes > desired_scenes:
             base_threshold = optimal_threshold
-            
+
         # Save the current threshold value
         prec_value = optimal_threshold
 
@@ -230,7 +231,7 @@ def find_optimal_threshold(filename, sec_for_scene=1.5):
 
         # Calcolate the delta
         last_delta = abs(optimal_threshold - prec_value)
-            
+
     return max(optimal_threshold, BASE_THRESHOLD)
 
 
