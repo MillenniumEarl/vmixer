@@ -48,7 +48,7 @@ def _get_frame_list(filepath: str, n=2) -> List[TimeFrame]:
 
 def _find_sync_point(reference_data: List[FrameHash],
                      compare_data: List[FrameHash],
-                     matching_frames=5) -> Tuple[FrameHash, FrameHash]:
+                     matching_frames=3) -> Tuple[FrameHash, FrameHash]:
     """Find the point to join two videos with the same frames
 
     Args:
@@ -56,7 +56,7 @@ def _find_sync_point(reference_data: List[FrameHash],
         compare_data (list[FrameHash]): List of hashes of frames of the compared video
         matching_frames (int, optional): Number of frames that must be 
                                         consecutively equal in order to consider 
-                                        the synchronization point. Defaults to 5.
+                                        the synchronization point. Defaults to 3.
 
     Returns:
         tuple[FrameHash, FrameHash]: Synchronization point, the first element refers 
