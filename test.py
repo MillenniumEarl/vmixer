@@ -3,12 +3,13 @@ import os
 
 # Project modules
 from src.__init__ import video_similarity, video_merge
+from src.scene_parser import find_optimal_threshold
 
 # Constants
 REFERENCE_FILE = os.path.join('test', 'C', 'cut1.mp4')
 COMPARE_FILE = os.path.join('test', 'C', 'cut2.mp4')
 MERGED_FILE = os.path.join('test', 'result.mp4')
-THRESHOLD = 7.0
+THRESHOLD = find_optimal_threshold(REFERENCE_FILE)
 
 # Find similarity between videos
 similarity = video_similarity(REFERENCE_FILE, COMPARE_FILE, THRESHOLD)
