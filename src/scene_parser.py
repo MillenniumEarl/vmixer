@@ -142,7 +142,6 @@ def _create_scenes_map(reference_data: List[SceneData], compare_data: List[Scene
                 (cmp_path, _,  cmp_hash) = timeline[cmpi]
 
                 # Check similarity between scenes
-                print(f'{path}:{cmp_path} -> ', end='')
                 if compare_videohash(hash, cmp_hash, threshold=0.10):
                     duplicate_found = True
 
