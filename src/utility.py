@@ -77,4 +77,4 @@ def compare_videohash(ref_hash_list: List[FrameHash], cmp_hash_list: List[FrameH
     similarity = len(comparison) / len(ref_hash_list)
     similarity = min(similarity, 1.0)
 
-    return similarity > threshold
+    return similarity >= threshold
