@@ -10,13 +10,14 @@ from .scene_parser import extract_scenes, compare_scenes, sync_scenes
 # Aliases and types
 FrameHash = Tuple[float, str]
 
-def video_similarity(reference_path:str, comparative_path:str, threshold=10.0) -> float:
+
+def video_similarity(reference_path: str, comparative_path: str, threshold=10.0) -> float:
     """Compare two videos to find similarities. Returns a value 
         between 0 and 1, where 0 indicates no similarity and 1 returns equality
 
         The first video passed by parameter is taken as a reference, 
         inverting the videos could change the result
-    
+
     Args:
         reference_path (str): Path to reference video
         comparative_path (str): Path of the video to compare
@@ -27,7 +28,7 @@ def video_similarity(reference_path:str, comparative_path:str, threshold=10.0) -
     Returns:
         float: Similarity of videos, value between 0 and 1
     """
-    
+
     # Local variables
     tmp_ref_dest = tempfile.mkdtemp()
     tmp_cmp_dest = tempfile.mkdtemp()
@@ -88,7 +89,7 @@ def video_merge(reference_path: str, comparative_path: str, dest: str, threshold
     shutil.rmtree(tmp_cmp_dest)
 
 
-def video_hash(filename:str) -> List[str]:
+def video_hash(filename: str) -> List[str]:
     """Calculate the perceptual hashes of a video
 
     Args:
