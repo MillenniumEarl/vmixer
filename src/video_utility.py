@@ -12,7 +12,7 @@ FrameHash = Tuple[float, str]
 TimeFrame = Tuple[float, List]
 
 
-def _get_frame_list(filepath:str, n=2) -> List[TimeFrame]:
+def _get_frame_list(filepath: str, n=2) -> List[TimeFrame]:
     """Gets frames from a video file
 
     Args:
@@ -22,33 +22,33 @@ def _get_frame_list(filepath:str, n=2) -> List[TimeFrame]:
     Returns:
         List[TimeFrame]: List of tuples in the form (timestamp, frame)
     """
-    
+
     # Local variables
     data = []
     t = 0
-    
+
     with VideoFileClip(filepath) as clip:
         # Find the time interval after which to get a frame
         frames = int(clip.fps * clip.duration)
         time_for_frame = clip.duration / frames
         time_slice = time_for_frame * n
-        
+
         while t < clip.duration:
             # Get frame at current time
             frame = clip.get_frame(t)
-            
+
             # Save FrameHash
             data.append((t, frame))
-            
+
             # Increment time by time_slice
             t += time_slice
-    
+
     return data
 
 
-def _find_sync_point(reference_data:List[FrameHash], 
-                    compare_data:List[FrameHash], 
-                    matching_frames=7) -> Tuple[FrameHash, FrameHash]:
+def _find_sync_point(reference_data: List[FrameHash],
+                     compare_data: List[FrameHash],
+                     matching_frames=7) -> Tuple[FrameHash, FrameHash]:
     """Find the point to join two videos with the same frames
 
     Args:
@@ -71,13 +71,15 @@ def _find_sync_point(reference_data:List[FrameHash],
         (ref_ts, ref_hash) = i
 
         # Check if the number of sync frames are enough
-        if sync_count == matching_frames: break
+        if sync_count == matching_frames:
+            break
 
         for cmp in compare_data:
             (ts, hash) = cmp
 
             # Check if the number of sync frames are enough
-            if sync_count == matching_frames: break
+            if sync_count == matching_frames:
+                break
 
             if ref_hash == hash:
                 # Assig the sync point (if not exists)
@@ -91,11 +93,11 @@ def _find_sync_point(reference_data:List[FrameHash],
                 # reset the values
                 sync_point = None
                 sync_count = 0
-    
+
     return sync_point
 
 
-def whash_video(filepath:str, frame_skip=5) -> List[FrameHash]:
+def whash_video(filepath: str, frame_skip=5) -> List[FrameHash]:
     """Gets the wavelenghted perceptual hashes of the frames (and their timestamps) of a video.
 
     Args:
@@ -109,7 +111,7 @@ def whash_video(filepath:str, frame_skip=5) -> List[FrameHash]:
     # Local variables
     data_list = []
     tuple_list = []
-    
+
     # Obtains both the frame and the timestamp of it
     for data in _get_frame_list(filepath, frame_skip):
         (timestamp, frame) = data
@@ -119,7 +121,7 @@ def whash_video(filepath:str, frame_skip=5) -> List[FrameHash]:
     return tuple_list
 
 
-def compare_video(reference_path:str, video_path:str, frame_skip=5) -> float:
+def compare_video(reference_path: str, video_path: str, frame_skip=5) -> float:
     """Calculate the similarity between two videos 
         by calculating the perceptual hashes each frame_skip frame
 
@@ -131,7 +133,7 @@ def compare_video(reference_path:str, video_path:str, frame_skip=5) -> float:
     Returns:
         float: Similarity of the videos (from 0.0 to 1.0)
     """
-    
+
     # Obtains the hash of the frames in the videos
     reference_hash_list = whash_video(reference_path, frame_skip)
     video_hash_list = whash_video(video_path, frame_skip)
@@ -151,10 +153,10 @@ def compare_video_hash(reference_hash_list: List[FrameHash], compare_hash_list: 
     Returns:
         float: Video similarity index. Between 0 and 1
     """
-    
+
     # Local variables
     count = 0
-    
+
     # Search for video hash in the reference_hash_list
     for data in compare_hash_list:
         (_, hash) = data
@@ -166,7 +168,7 @@ def compare_video_hash(reference_hash_list: List[FrameHash], compare_hash_list: 
     return min(similarity, 1.0)
 
 
-def sync_video(reference_path:str, compare_path:str, dest:str) -> bool:
+def sync_video(reference_path: str, compare_path: str, dest: str) -> bool:
     """Concatenates two videos belonging to the same movie based on equal frames
 
     Args:
@@ -183,7 +185,8 @@ def sync_video(reference_path:str, compare_path:str, dest:str) -> bool:
 
     # Find sync point
     sync_point = _find_sync_point(ref_hash_list, cmp_hash_list)
-    if sync_point is None: return False
+    if sync_point is None:
+        return False
 
     # Read video clips
     ref_clip = VideoFileClip(reference_path)
@@ -196,7 +199,8 @@ def sync_video(reference_path:str, compare_path:str, dest:str) -> bool:
 
     # Merge and save clip
     final = concatenate_videoclips([start_clip, end_clip], method='compose')
-    final.write_videofile(dest, preset='fast', threads=4, verbose=False, logger=None)
+    final.write_videofile(dest, preset='fast', threads=4,
+                          verbose=False, logger=None)
     final.close()
 
     # Close all the clips

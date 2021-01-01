@@ -11,7 +11,7 @@ import numpy as np
 FrameHash = Tuple[float, str]
 
 
-def md5(filename:str)->str:
+def md5(filename: str) -> str:
     """Calculate the MD5 hash for the specified file
 
     Args:
@@ -29,7 +29,7 @@ def md5(filename:str)->str:
     return hash_md5.hexdigest()
 
 
-def np_whash(array:np.array, scale=2) -> str:
+def np_whash(array: np.array, scale=2) -> str:
     """Calculate the wavelet perceptual hash of a numpy array (image)
 
     Args:
@@ -65,14 +65,14 @@ def compare_videohash(ref_hash_list: List[FrameHash], cmp_hash_list: List[FrameH
     Returns:
         bool: True if the two videos are similar, False otherwise
     """
-    
+
     # Local variables
     cmp_hashes = [item[1] for item in cmp_hash_list]
     ref_hashes = [item[1] for item in ref_hash_list]
 
     # Count the hash matches
     comparison = [hash for hash in cmp_hashes if hash in ref_hashes]
-    
+
     # Elaborate similarity
     similarity = len(comparison) / len(ref_hash_list)
     similarity = min(similarity, 1.0)
