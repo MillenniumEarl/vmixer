@@ -30,7 +30,7 @@ def md5(filename:str)->str:
 
 
 def np_whash(array:np.array, scale=2) -> str:
-    """Calculate the wavelenghted perceptual hash of a numpy array (image)
+    """Calculate the wavelet perceptual hash of a numpy array (image)
 
     Args:
         array (np.array): Numpy array to hash
@@ -48,11 +48,11 @@ def np_whash(array:np.array, scale=2) -> str:
     image = image.resize((width, height))
 
     # Calculate hash
-    hash = imagehash.whash(image)
+    hash = imagehash.whash(image, mode='db4')
     return str(hash)
 
 
-def compare_videohash(ref_hash_list: List[FrameHash], cmp_hash_list: List[FrameHash], threshold=0.1) -> bool:
+def compare_videohash(ref_hash_list: List[FrameHash], cmp_hash_list: List[FrameHash], threshold=0.75) -> bool:
     """Compare the hashes of two videos to determine if they are similar
 
     Args:
@@ -60,22 +60,21 @@ def compare_videohash(ref_hash_list: List[FrameHash], cmp_hash_list: List[FrameH
         cmp_hash_list (List[FrameHash]): Comparison video hash list
         threshold (float, optional): Value above which to consider two hash lists 
                                     (and consequently two videos) similar. 
-                                    Defaults to 0.1.
+                                    Defaults to 0.75.
 
     Returns:
         bool: True if the two videos are similar, False otherwise
     """
     
     # Local variables
-    count = 0
+    cmp_hashes = [item[1] for item in cmp_hash_list]
+    ref_hashes = [item[1] for item in ref_hash_list]
 
-    for a in cmp_hash_list:
-        (_, cmp_hash) = a
-        results = [item for item in ref_hash_list if cmp_hash in item]
-        if len(results) > 0:
-            count += 1
-
-    similarity = count / len(ref_hash_list)
+    # Count the hash matches
+    comparison = [hash for hash in cmp_hashes if hash in ref_hashes]
+    
+    # Elaborate similarity
+    similarity = len(comparison) / len(ref_hash_list)
     similarity = min(similarity, 1.0)
 
     return similarity > threshold
