@@ -350,20 +350,21 @@ def compare_scenes(reference_data: List[SceneData], compare_data: List[SceneData
 
     for data in compare_data:
         # Unpack data and search the hash in the reference list
-        (path, index, hash) = data
+        (path, _, hash) = data
 
-        results = [item for item in reference_data if compare_videohash(
-            item[2], hash, threshold=0.1)]
+        # Filter the hashes
+        results = [item for item in reference_data if compare_videohash(item[2], hash, threshold=0.2)]
+        uniques = [item for item in results if item[0]
+                   not in [path for pair in pairs for path in pair]]
+        
+        # Get the first result
+        similar = uniques[0] if len(uniques) > 0 else None
 
-        if len(results) > 0:
-            # Find duplicates and ignore them to avoid more match per file
-            (ref_path, ref_index, ref_hash) = results[0]
-            duplicates = [item for item in pairs if ref_path in item]
-
-            # Save the pair of similar files
-            if len(duplicates) == 0:
-                count += compare_video(path, ref_path)
-                pairs.append((path, ref_path))
+        # Calculate similarity
+        if similar != None:
+            (ref_path, _, _) = similar
+            count += compare_video(path, ref_path)
+            pairs.append((path, ref_path))
 
     # Calculate similarity (how many files are similar)
     similarity = count / len(reference_data)
