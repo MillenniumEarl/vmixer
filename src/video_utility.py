@@ -12,12 +12,12 @@ FrameHash = Tuple[float, str]
 TimeFrame = Tuple[float, List]
 
 
-def _get_frame_list(filepath:str, n=5) -> List[TimeFrame]:
+def _get_frame_list(filepath:str, n=2) -> List[TimeFrame]:
     """Gets frames from a video file
 
     Args:
         filepath (str): Path to video
-        n (int, optional): Number of frames each to process a frame. Defaults to 5.
+        n (int, optional): Number of frames each to process a frame. Defaults to 2.
 
     Returns:
         List[TimeFrame]: List of tuples in the form (timestamp, frame)
