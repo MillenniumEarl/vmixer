@@ -8,7 +8,8 @@ import uuid
 
 # pip modules
 from scenedetect import VideoManager
-from scenedetect import SceneManager
+from scenedetect import SceneManager 
+from scenedetect import StatsManager
 from scenedetect import video_splitter
 from scenedetect.detectors import ContentDetector
 from moviepy.editor import VideoFileClip, concatenate_videoclips
@@ -16,7 +17,7 @@ from joblib import Parallel, delayed
 
 # Project imports
 from .video_utility import whash_video, compare_video, sync_video
-from .utility import compare_videohash
+from .utility import md5, compare_videohash
 
 # Aliases and types
 FrameHash = Tuple[float, str]
@@ -24,6 +25,11 @@ SceneData = Tuple[str, int, List[FrameHash]]
 SceneHash = Tuple[str, int, List[FrameHash]]
 ComparationResult = Tuple[float, List[Tuple[str, str]]]
 ScenePairPath = Tuple[str, str]
+
+# Create a folder for the video stats
+cache_dir = os.path.join(os.getenv('APPDATA'), 'vmixer_cache')
+if not os.path.exists(cache_dir): os.mkdir(cache_dir)
+
 
 def _chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
@@ -94,53 +100,86 @@ def _create_scenes_map(reference_data: List[SceneData], compare_data: List[Scene
     
     # Local variables
     scene_map = []
-    cmp_first_index = -1
-    cmp_last_index = 0
-
-    # Obtains all the scenes in the reference video 
-    # and the common scenes between the videos
-    for data in reference_data:
-        (path, _, hash) = data
-        results = [item for item in compare_data if compare_videohash(hash, item[2])]
-
-        pair = (None, None)
-        if len(results) == 0:
-            # Scene in the reference video but NOT in the compare video
-            pair = (path, None)
-        else: 
-            # Scene in both the videos, will be merged later
-            (cmp_path, _, _) = results[0]
-            pair = (path, cmp_path)
-
-            # Save the index that will be later used to 
-            # split the compared video data
-            index = compare_data.index(results[0])
-            if cmp_first_index == -1: cmp_first_index = index
-            if index > cmp_last_index:
-                cmp_last_index = index
-
-        scene_map.append(pair)
-
-    # Obtains all the scenes in the comparison video 
-    # that are NOT in the reference video
+    first_duplicate = False
+    comparative_before_reference = False
+    cmp_before_ref_index = 0
     
-    if cmp_first_index != 0:
-        remainings = compare_data[:cmp_first_index - 1]
-        remainings.reverse()
-        for data in remainings:
-            (path, _, _) = data
-            scene_map.insert(0, (None, path))
+    # Join the list in a single consecutive list
+    timeline = reference_data + compare_data
     
-    if len(compare_data) > cmp_last_index + 1:
-        remainings = compare_data[cmp_last_index + 1:]
-        for data in remainings:
-            (path, _, _) = data
-            scene_map.append((None, path))
+    # Starting from the first element:
+    # If no duplicate scene is found: add path to scene_map
+    # If duplicate scene is found: add both paths to scene_map
+    #
+    # When the first duplicate is found, if the duplicate's index is
+    # NOT equal to len(reference_data) + 1 (so if the duplicate scene 
+    # is at the END of compare_data) reverse the array from
+    # [len(reference_data) + 1:] and add the data **of compare_data**
+    # to scene_map from the start of the list (index 0)
     
+    for i in range(0, len(timeline)):
+        # In-loop variables
+        duplicate_found = False
+        
+        # Unpack reference data
+        (path, _, hash) = timeline[i]
+        
+        # Check if this scene is already in the scene_map
+        # (only after the join point, before is pointless as
+        # there aren't duplicate scenes in the same video)
+        if i >= len(reference_data):
+            duplicates = [item for item in scene_map if path in item]
+            if len(duplicates) > 0: continue
+        
+        # Search for the first duplicate (only if we are in 
+        # the data belonging to reference_data)
+        if i < len(reference_data):
+            for cmpi in range(len(reference_data), len(timeline)):
+                # Unpack comparative data
+                (cmp_path, _,  cmp_hash) = timeline[cmpi]
+                
+                # Check similarity between scenes
+                print(f'{path}:{cmp_path} -> ', end='')
+                if compare_videohash(hash, cmp_hash, threshold=0.15):
+                    duplicate_found = True
+                    
+                    # Append pair to scene_map
+                    scene_map.append((path, cmp_path))
+                    
+                    # Manage first duplicate
+                    if not first_duplicate:
+                        first_duplicate = True
+                        
+                        # Check if the comparative data starts 
+                        # **before** the reference data
+                        index_duplicate = timeline.index(timeline[cmpi])
+                        comparative_before_reference = index_duplicate != len(reference_data)
+                        
+                    # Exit from loop
+                    break
+            
+        # Add element at index i if no duplicate was found
+        if not duplicate_found:
+            item = (path, None)
+            
+            # Add the item at the beginning of the list,
+            # mantaining the time order. Valid only for the
+            # compare_data elements
+            if comparative_before_reference and i >= len(reference_data):
+                scene_map.insert(cmp_before_ref_index, item)
+                cmp_before_ref_index += 1
+                
+            # Add item at the end of the list
+            else: scene_map.append(item)
+
     return scene_map
 
 
-def find_scenes(video_path:str, threshold=30.0) -> List:
+def find_optimal_threshold():
+    pass
+
+
+def find_scenes(video_path:str, threshold=30.0, cache=True) -> List:
     """Find all the scenes in a video.
 
     Args:
@@ -151,20 +190,39 @@ def find_scenes(video_path:str, threshold=30.0) -> List:
         list: List of tuple, each one rapresenting a single scene
     """
     
+    # Local variables
+    filehash = None
+    
     # Create our video & scene managers, then add the detector.
     video_manager = VideoManager([video_path])
-    scene_manager = SceneManager()
+    stats_manager = StatsManager()
+    scene_manager = SceneManager(stats_manager)
     scene_manager.add_detector(ContentDetector(threshold=threshold))
 
     # Base timestamp at frame 0 (required to obtain the scene list).
     base_timecode = video_manager.get_base_timecode()
+    
+    # Check if the file is in the cache
+    if cache:
+        filehash = md5(video_path)
+        cache_file = os.path.join(cache_dir, f'{filehash}.csv')
+        
+        if os.path.exists(cache_file):
+            with open(cache_file, 'r') as f:
+                stats_manager.load_from_csv(f, base_timecode=base_timecode)
 
     # Improve processing speed by downscaling before processing.
     video_manager.set_downscale_factor()
 
     # Start the video manager and perform the scene detection.
     video_manager.start()
-    scene_manager.detect_scenes(frame_source=video_manager, show_progress=True)
+    scene_manager.detect_scenes(frame_source=video_manager, show_progress=False)
+    
+    # Save stats of the file
+    if stats_manager.is_save_required() and cache: 
+        cache_file = os.path.join(cache_dir, f'{filehash}.csv')
+        with open(cache_file, 'w') as f:
+            stats_manager.save_to_csv(f, base_timecode)
 
     # Each returned scene is a tuple of the (start, end) timecode.
     return scene_manager.get_scene_list(base_timecode)
@@ -207,7 +265,7 @@ def extract_scenes(video_path: str, output_dir: str, threshold=10.0) -> List[Sce
             os.path.join(output_dir, '$SCENE_NUMBER.mp4'),
             '', # Video name is blank because is not needed
             arg_override='-c:v libx264 -preset ultrafast -crf 21 -c:a aac', # Changed only the preset
-            hide_progress=False,
+            hide_progress=True,
             suppress_output=True)
 
     # Calculate hash list
@@ -238,8 +296,7 @@ def compare_scenes(reference_data: List[SceneData], compare_data: List[SceneData
         # Unpack data and search the hash in the reference list
         (path, index, hash) = data
 
-        results = [
-            item for item in reference_data if compare_videohash(item[2], hash)]
+        results = [item for item in reference_data if compare_videohash(item[2], hash, threshold=0.1)]
 
         if len(results) > 0:
             # Find duplicates and ignore them to avoid more match per file
@@ -247,7 +304,7 @@ def compare_scenes(reference_data: List[SceneData], compare_data: List[SceneData
             duplicates = [item for item in pairs if ref_path in item]
             
             # Save the pair of similar files
-            if compare_videohash(ref_hash, hash) and len(duplicates) == 0:
+            if len(duplicates) == 0:
                 count += compare_video(path, ref_path)
                 pairs.append((path, ref_path))
 
@@ -275,15 +332,15 @@ def sync_scenes(reference_data: List[SceneData], compare_data: List[SceneData], 
 
     for pair in scene_map:
         # Unpack the paths
-        (first_path, second_path) = pair
+        (path, merge_path) = pair
 
-        if first_path is None: clip_paths.append(second_path)
-        elif second_path is None: clip_paths.append(first_path)
+        if merge_path is None:
+            clip_paths.append(path)
         else:
             tmp_dir = tempfile.mkdtemp()
             tmp_dest = os.path.join(tmp_dir, f'{str(uuid.uuid4().hex)}.mp4')
             temp_video.append(tmp_dir)
-            if sync_video(first_path, second_path, tmp_dest):
+            if sync_video(path, merge_path, tmp_dest):
                 clip_paths.append(tmp_dest)
       
     # Merge chunks of clips until MAX_CLIP_AT_TIME remains
