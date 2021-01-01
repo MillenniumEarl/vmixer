@@ -4,6 +4,7 @@ import shutil
 import glob
 import tempfile
 from typing import Tuple, List
+import uuid
 
 # pip modules
 from scenedetect import VideoManager
@@ -23,6 +24,39 @@ SceneData = Tuple[str, int, List[FrameHash]]
 SceneHash = Tuple[str, int, List[FrameHash]]
 ComparationResult = Tuple[float, List[Tuple[str, str]]]
 ScenePairPath = Tuple[str, str]
+
+def _chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+
+def _merge_chunk_clips(paths:List[str]) -> str:
+    """Merges all the videos identified by the paths contained in the parameter
+        in a single file
+
+    Args:
+        paths (List[str]): List of video paths
+
+    Returns:
+        str: Path to merged video
+    """
+    # Read the clip
+    merge_clips = [VideoFileClip(path) for path in paths]
+            
+    # Merge the clips
+    tmp_dest = os.path.join(tempfile.mkdtemp(), f'{str(uuid.uuid4().hex)}.mp4')
+    tmp_clip = concatenate_videoclips(merge_clips, method='compose')
+        
+    # Save the clip to disk
+    tmp_clip.write_videofile(tmp_dest, threads=4, preset='fast',
+                               verbose=False, logger=None)
+    
+    # Close the clips
+    tmp_clip.close()
+    map(lambda clip: clip.close(), merge_clips)
+    
+    return tmp_dest
 
 
 def _hash_scene(filename:str) -> SceneHash:
@@ -145,7 +179,7 @@ def extract_scenes(video_path: str, output_dir: str, threshold=10.0) -> List[Sce
         threshold (float, optional): Threshold used to detect scene change. Defaults to 30.0.
     
     Returns:
-        list[SceneData]: List of tuple in the format (scene path, scene index, perceptual first frame hash)
+        list[SceneData]: List of tuple in the format (scene path, scene index, perceptual video hashes)
     """
     
     # Extract the video name
@@ -222,7 +256,7 @@ def compare_scenes(reference_data: List[SceneData], compare_data: List[SceneData
     similarity = min(similarity, 1.0)
 
     return (similarity, pairs)
-
+    
 
 def sync_scenes(reference_data: List[SceneData], compare_data: List[SceneData], dest:str):
     """Synchronize scenes belonging to two videos into a single video
@@ -234,43 +268,42 @@ def sync_scenes(reference_data: List[SceneData], compare_data: List[SceneData], 
     """
     
     # Local variables
+    MAX_CLIP_AT_TIME = 10
     scene_map = _create_scenes_map(reference_data, compare_data)
-    merge_paths = []
-    temp_video = []
+    clip_paths = []
+    temp_video = [] # Path of videos to be deleted
 
     for pair in scene_map:
         # Unpack the paths
         (first_path, second_path) = pair
 
-        if first_path is None: merge_paths.append(second_path)
-        elif second_path is None: merge_paths.append(first_path)
+        if first_path is None: clip_paths.append(second_path)
+        elif second_path is None: clip_paths.append(first_path)
         else:
             tmp_dir = tempfile.mkdtemp()
-            tmp_dest = os.path.join(tmp_dir, 'merged.mp4')
+            tmp_dest = os.path.join(tmp_dir, f'{str(uuid.uuid4().hex)}.mp4')
             temp_video.append(tmp_dir)
             if sync_video(first_path, second_path, tmp_dest):
-                merge_paths.append(tmp_dest)
+                clip_paths.append(tmp_dest)
+      
+    # Merge chunks of clips until MAX_CLIP_AT_TIME remains
+    while len(clip_paths) > MAX_CLIP_AT_TIME:
+        chunk_clips_paths = Parallel(n_jobs=-2)(delayed(_merge_chunk_clips)(chunk)
+                                               for chunk in _chunks(clip_paths, MAX_CLIP_AT_TIME))
         
-    # Get the first path and remove it from list
-    first_path = merge_paths[0]
-    merge_paths.remove(first_path)
-    
+        # Add paths to list of deletable videos
+        temp_video.extend(chunk_clips_paths)
+        
+        # Set clips path
+        clip_paths = chunk_clips_paths
+            
     # Merge all clips in a single video
-    final_clip = VideoFileClip(first_path)
-    for path in merge_paths:
-        # Read the clip
-        clip = VideoFileClip(path)
-        
-        # Merge two clips
-        final_clip = concatenate_videoclips([final_clip, clip], method='compose')
-        
-        # Close the clip
-        # clip.close() Give error on write_videofile
+    tmp_final_path = _merge_chunk_clips(clip_paths)
     
-    # Save the final clip to disk
-    final_clip.write_videofile(dest, threads=4, verbose=False, logger=None)
-    final_clip.close()
-          
+    # Move the file to dest
+    shutil.move(tmp_final_path, dest)
+    
     # Delete all the merged video directories
-    for path in temp_video:
-        shutil.rmtree(path)
+    temp_video.extend(clip_paths)
+    dirs = [os.path.dirname(file) for file in temp_video]
+    map(lambda dir: shutil.rmtree(dir), dirs)
