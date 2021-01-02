@@ -48,7 +48,7 @@ def np_whash(array: np.array, scale=2) -> str:
     image = image.resize((width, height))
 
     # Calculate hash
-    hash = imagehash.whash(image, mode='db4')
+    hash = imagehash.whash(image)
     return str(hash)
 
 
