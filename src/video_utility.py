@@ -1,30 +1,29 @@
 # Core modules
-from typing import Tuple, List
+from typing import Tuple, List, Iterator
 
 # pip modules
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 
 # Project modules
-from .utility import np_whash, compare_videohash
+from .utility import np_whash, compare_videohash, videohash_similarity
 
 # Aliases and types
 FrameHash = Tuple[float, str]
 TimeFrame = Tuple[float, List]
 
 
-def _get_frame_list(filepath: str, n=2) -> List[TimeFrame]:
-    """Gets frames from a video file
+def _get_frame_list(filepath: str, n=5) -> Iterator[TimeFrame]:
+    """Generator: yields frames from a video file
 
     Args:
         filepath (str): Path to video
-        n (int, optional): Number of frames each to process a frame. Defaults to 2.
+        n (int, optional): Number of frames each to process a frame. Defaults to 5.
 
     Returns:
         List[TimeFrame]: List of tuples in the form (timestamp, frame)
     """
 
     # Local variables
-    data = []
     t = 0
 
     with VideoFileClip(filepath) as clip:
@@ -38,17 +37,15 @@ def _get_frame_list(filepath: str, n=2) -> List[TimeFrame]:
             frame = clip.get_frame(t)
 
             # Save FrameHash
-            data.append((t, frame))
+            yield (t, frame)
 
             # Increment time by time_slice
             t += time_slice
 
-    return data
-
 
 def _find_sync_point(reference_data: List[FrameHash],
                      compare_data: List[FrameHash],
-                     matching_frames=3) -> Tuple[FrameHash, FrameHash]:
+                     matching_frames=5) -> Tuple[FrameHash, FrameHash]:
     """Find the point to join two videos with the same frames
 
     Args:
@@ -56,7 +53,7 @@ def _find_sync_point(reference_data: List[FrameHash],
         compare_data (list[FrameHash]): List of hashes of frames of the compared video
         matching_frames (int, optional): Number of frames that must be 
                                         consecutively equal in order to consider 
-                                        the synchronization point. Defaults to 3.
+                                        the synchronization point. Defaults to 5.
 
     Returns:
         tuple[FrameHash, FrameHash]: Synchronization point, the first element refers 
@@ -97,12 +94,12 @@ def _find_sync_point(reference_data: List[FrameHash],
     return sync_point
 
 
-def whash_video(filepath: str, frame_skip=5) -> List[FrameHash]:
+def whash_video(filepath: str, frame_skip=3) -> List[FrameHash]:
     """Gets the wavelenghted perceptual hashes of the frames (and their timestamps) of a video.
 
     Args:
         filepath (str): Path to video
-        frame_skip (int, optional): Every how many frames calculate a hash. Defaults to 5.
+        frame_skip (int, optional): Every how many frames calculate a hash. Defaults to 3.
 
     Returns:
         list[FrameHash]: List of tuples (timestamp, hash frame) of type (float, str)
@@ -139,33 +136,7 @@ def compare_video(reference_path: str, video_path: str, frame_skip=5) -> float:
     video_hash_list = whash_video(video_path, frame_skip)
 
     # Compare hashes
-    return compare_video_hash(reference_hash_list, video_hash_list)
-
-
-def compare_video_hash(reference_hash_list: List[FrameHash], compare_hash_list: List[FrameHash]) -> float:
-    """It compares the perceptual hashes of two videos 
-        and returns a similarity index between 0 and 1
-
-    Args:
-        reference_hash_list (List[FrameHash]): Hash of the reference video
-        compare_hash_list (List[FrameHash]): Hash of the video to compare
-
-    Returns:
-        float: Video similarity index. Between 0 and 1
-    """
-
-    # Local variables
-    count = 0
-
-    # Search for video hash in the reference_hash_list
-    for data in compare_hash_list:
-        (_, hash) = data
-        results = [item for item in reference_hash_list if hash in item]
-        if len(results) > 0:
-            count += 1
-
-    similarity = count / len(reference_hash_list)
-    return min(similarity, 1.0)
+    return videohash_similarity(reference_hash_list, video_hash_list)
 
 
 def sync_video(reference_path: str, compare_path: str, dest: str) -> bool:
