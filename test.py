@@ -9,7 +9,7 @@ from src.scene_parser import find_optimal_threshold
 ORIGINAL_FILE = os.path.join('test', 'B', 'original.mp4')
 REFERENCE_FILE = os.path.join('test', 'B', 'cut1.mp4')
 COMPARE_FILE = os.path.join('test', 'B', 'cut2.mp4')
-MERGED_FILE = os.path.join('test', 'result.mp4')
+MERGED_FILE = os.path.join('test', 'B', 'result.mp4')
 
 # Find optimal threshold for reference file
 threshold = find_optimal_threshold(REFERENCE_FILE)
