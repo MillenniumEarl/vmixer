@@ -39,12 +39,13 @@ def _chunks(lst, n):
         yield lst[i:i + n]
 
 
-def _merge_chunk_clips(paths: List[str]) -> str:
+def _merge_chunk_clips(paths: List[str], preset='ultrafast') -> str:
     """Merges all the videos identified by the paths contained in the parameter
         in a single file
 
     Args:
         paths (List[str]): List of video paths
+        preset (str): Preset to use for concatenating the videos
 
     Returns:
         str: Path to merged video
@@ -57,7 +58,8 @@ def _merge_chunk_clips(paths: List[str]) -> str:
     tmp_clip = concatenate_videoclips(merge_clips, method='compose')
 
     # Save the clip to disk
-    tmp_clip.write_videofile(tmp_dest, threads=4, preset='fast',
+    tmp_clip.write_videofile(tmp_dest, threads=4, preset=preset,
+                             ffmpeg_params=['-crf', '17'],
                              verbose=False, logger=None)
 
     # Close the clips
@@ -179,7 +181,7 @@ def _create_scenes_map(reference_data: List[SceneData], compare_data: List[Scene
     return scene_map
 
 
-def find_optimal_threshold(filename, sec_for_scene=1.5):    
+def find_optimal_threshold(filename, frames_per_scene=30):
     # Local variables
     BASE_THRESHOLD = 5.0
     content_val_list = []
@@ -198,7 +200,7 @@ def find_optimal_threshold(filename, sec_for_scene=1.5):
         csv_file  = csv.DictReader(f)
         content_val_list = [float(row['content_val']) for row in csv_file]
 
-    frames_per_scene = framerate * sec_for_scene
+    # Get the number of scenes available with the given parameters
     desired_scenes = int(len(content_val_list) / frames_per_scene)
     
     # Define the base values for the binary search
@@ -208,7 +210,7 @@ def find_optimal_threshold(filename, sec_for_scene=1.5):
     last_delta = optimal_threshold
     
     # Exit from the loop when we have reached a stale point
-    while last_delta > 0.1:
+    while last_delta > 0.01:
         # Count the number of scenes available with this threshold
         available_scenes = sum(
             val >= optimal_threshold for val in content_val_list)
@@ -319,8 +321,8 @@ def extract_scenes(video_path: str, output_dir: str, threshold=10.0) -> List[Sce
             scenes,
             os.path.join(output_dir, '$SCENE_NUMBER.mp4'),
             '',  # Video name is blank because is not needed
-            # Changed only the preset
-            arg_override='-c:v libx264 -preset ultrafast -crf 21 -c:a aac',
+            # Changed the preset and the CRF (21 -> 17)
+            arg_override='-c:v libx264 -preset ultrafast -crf 17 -c:a aac',
             hide_progress=True,
             suppress_output=True)
 
@@ -413,7 +415,7 @@ def sync_scenes(reference_data: List[SceneData], compare_data: List[SceneData], 
         clip_paths = chunk_clips_paths
 
     # Merge all clips in a single video
-    tmp_final_path = _merge_chunk_clips(clip_paths)
+    tmp_final_path = _merge_chunk_clips(clip_paths, preset='medium')
 
     # Move the file to dest
     shutil.move(tmp_final_path, dest)
@@ -421,4 +423,4 @@ def sync_scenes(reference_data: List[SceneData], compare_data: List[SceneData], 
     # Delete all the merged video directories
     temp_video.extend(clip_paths)
     dirs = [os.path.dirname(file) for file in temp_video]
-    map(lambda dir: shutil.rmtree(dir), dirs)
+    map(shutil.rmtree, dirs)
