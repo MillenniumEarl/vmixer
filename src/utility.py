@@ -52,6 +52,32 @@ def np_whash(array: np.array, scale=2) -> str:
     return str(hash)
 
 
+def videohash_similarity(ref_hash_list: List[FrameHash], cmp_hash_list: List[FrameHash]) -> float:
+    """It compares the perceptual hashes of two videos 
+        and returns a similarity index between 0 and 1
+
+    Args:
+        ref_hash_list (List[FrameHash]): Reference video hash list
+        cmp_hash_list (List[FrameHash]): Comparison video hash list
+
+    Returns:
+        float: Similarity index between 0 and 1
+    """
+    
+    # Local variables
+    cmp_hashes = [item[1] for item in cmp_hash_list]
+    ref_hashes = [item[1] for item in ref_hash_list]
+
+    # Count the hash matches
+    comparison = [hash for hash in cmp_hashes if hash in ref_hashes]
+
+    # Elaborate similarity
+    similarity = len(comparison) / len(ref_hash_list)
+    similarity = min(similarity, 1.0)
+    
+    return similarity
+
+
 def compare_videohash(ref_hash_list: List[FrameHash], cmp_hash_list: List[FrameHash], threshold=0.75) -> bool:
     """Compare the hashes of two videos to determine if they are similar
 
@@ -66,15 +92,8 @@ def compare_videohash(ref_hash_list: List[FrameHash], cmp_hash_list: List[FrameH
         bool: True if the two videos are similar, False otherwise
     """
 
-    # Local variables
-    cmp_hashes = [item[1] for item in cmp_hash_list]
-    ref_hashes = [item[1] for item in ref_hash_list]
+    # Obtains the similarity
+    similarity = videohash_similarity(ref_hash_list, cmp_hash_list)
 
-    # Count the hash matches
-    comparison = [hash for hash in cmp_hashes if hash in ref_hashes]
-
-    # Elaborate similarity
-    similarity = len(comparison) / len(ref_hash_list)
-    similarity = min(similarity, 1.0)
-
+    # Compare with the threshold
     return similarity >= threshold
