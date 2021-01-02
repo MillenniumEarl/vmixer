@@ -18,7 +18,7 @@ from joblib import Parallel, delayed
 
 # Project imports
 from .video_utility import whash_video, compare_video, sync_video
-from .utility import md5, compare_videohash
+from .utility import md5, compare_videohash, videohash_similarity
 
 # Aliases and types
 FrameHash = Tuple[float, str]
@@ -101,7 +101,7 @@ def _create_scenes_map(reference_data: List[SceneData], compare_data: List[Scene
                             to include in the final video. If the tuple contains two paths, 
                             the related videos must be merged
     """
-
+    
     # Local variables
     scene_map = []
     first_duplicate = False
@@ -147,7 +147,8 @@ def _create_scenes_map(reference_data: List[SceneData], compare_data: List[Scene
                     continue
 
                 # Check similarity between scenes
-                if compare_videohash(hash, cmp_hash, threshold=0.10):
+                if compare_videohash(hash, cmp_hash, threshold=0.1):
+                    print(f'{path} -> {cmp_path} : {videohash_similarity(hash, cmp_hash)}')
                     duplicate_found = True
 
                     # Append pair to scene_map
@@ -159,8 +160,9 @@ def _create_scenes_map(reference_data: List[SceneData], compare_data: List[Scene
 
                         # Check if the comparative data starts
                         # **before** the reference data
-                        index_duplicate = timeline.index(timeline[cmpi])
-                        comparative_before_reference = index_duplicate != len(reference_data)
+                        index_duplicate = compare_data.index(timeline[cmpi])
+                        ten_percent = int(len(compare_data) / 10)
+                        comparative_before_reference = index_duplicate > ten_percent
 
                     # Exit from loop
                     break
