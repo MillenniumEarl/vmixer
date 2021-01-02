@@ -29,8 +29,8 @@ def md5(filename: str) -> str:
     return hash_md5.hexdigest()
 
 
-def np_whash(array: np.array, scale=1) -> str:
-    """Calculate the wavelet perceptual hash of a numpy array (image)
+def np_phash(array: np.array, scale=1) -> str:
+    """Calculate the perceptual hash of a numpy array (image)
 
     Args:
         array (np.array): Numpy array to hash

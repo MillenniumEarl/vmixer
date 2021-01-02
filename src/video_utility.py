@@ -5,7 +5,7 @@ from typing import Tuple, List, Iterator
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 
 # Project modules
-from .utility import np_whash, compare_videohash, videohash_similarity
+from .utility import np_phash, compare_videohash, videohash_similarity
 
 # Aliases and types
 FrameHash = Tuple[float, str]
@@ -112,7 +112,7 @@ def whash_video(filepath: str, frame_skip=3) -> List[FrameHash]:
     # Obtains both the frame and the timestamp of it
     for data in _get_frame_list(filepath, frame_skip):
         (timestamp, frame) = data
-        hash = np_whash(frame)
+        hash = np_phash(frame)
         tuple_list.append((timestamp, hash))
 
     return tuple_list
