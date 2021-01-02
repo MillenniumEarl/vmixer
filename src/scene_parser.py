@@ -117,9 +117,9 @@ def _create_scenes_map(reference_data: List[SceneData], compare_data: List[Scene
     #
     # When the first duplicate is found, if the duplicate's index is
     # NOT equal to len(reference_data) + 1 (so if the duplicate scene
-    # is at the END of compare_data) reverse the array from
-    # [len(reference_data) + 1:] and add the data **of compare_data**
-    # to scene_map from the start of the list (index 0)
+    # is at the END of compare_data) set comparative_before_reference 
+    # to True and add the data of **compare_data** to scene_map from 
+    # the start of the list (index 0)
 
     for i in range(0, len(timeline)):
         # In-loop variables
@@ -130,7 +130,7 @@ def _create_scenes_map(reference_data: List[SceneData], compare_data: List[Scene
 
         # Check if this scene is already in the scene_map
         # (only after the join point, before is pointless as
-        # there aren't duplicate scenes in the same video)
+        # there aren't (hopefully) duplicate scenes in the same video)
         if i >= len(reference_data):
             duplicates = [item for item in scene_map if path in item]
             if len(duplicates) > 0:
@@ -157,8 +157,7 @@ def _create_scenes_map(reference_data: List[SceneData], compare_data: List[Scene
                         # Check if the comparative data starts
                         # **before** the reference data
                         index_duplicate = timeline.index(timeline[cmpi])
-                        comparative_before_reference = index_duplicate != len(
-                            reference_data)
+                        comparative_before_reference = index_duplicate != len(reference_data)
 
                     # Exit from loop
                     break
