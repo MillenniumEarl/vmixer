@@ -6,13 +6,13 @@ from typing import List, Tuple
 # Project modules
 from .utility import videohash_similarity
 from .video_utility import sync_video, whash_video
-from .scene_parser import extract_scenes, compare_scenes, sync_scenes, cache_dir
+from .scene_parser import extract_scenes, compare_scenes, sync_scenes, cache_dir, find_optimal_threshold
 
 # Aliases and types
 FrameHash = Tuple[float, str]
 
 
-def video_similarity(reference_path: str, comparative_path: str, threshold=10.0) -> float:
+def video_similarity(reference_path: str, comparative_path: str, threshold=None) -> float:
     """Compare two videos to find similarities. Returns a value 
         between 0 and 1, where 0 indicates no similarity and 1 returns equality
 
@@ -24,7 +24,8 @@ def video_similarity(reference_path: str, comparative_path: str, threshold=10.0)
         comparative_path (str): Path of the video to compare
         threshold (float, optional): Threshold used to detect scene change. 
                                     The smaller it is, the more scenes are detected. 
-                                    Defaults to 10.0.
+                                    Use None to automatically detect the optimal value.
+                                    Defaults to None.
 
     Returns:
         float: Similarity of videos, value between 0 and 1
@@ -33,6 +34,12 @@ def video_similarity(reference_path: str, comparative_path: str, threshold=10.0)
     # Local variables
     tmp_ref_dest = tempfile.mkdtemp()
     tmp_cmp_dest = tempfile.mkdtemp()
+    
+    # Get the optimal threshold
+    if threshold is None:
+        ref_t = find_optimal_threshold(reference_path)
+        cmp_t = find_optimal_threshold(comparative_path)
+        threshold = (ref_t + cmp_t) / 2
 
     # Split videos in scenes
     ref_scene_data = extract_scenes(reference_path, tmp_ref_dest, threshold)
@@ -62,7 +69,7 @@ def video_hash_similarity(reference_hash_list: List[FrameHash], compare_hash_lis
     return videohash_similarity(reference_hash_list, compare_hash_list)
 
 
-def video_merge(reference_path: str, comparative_path: str, dest: str, threshold=6.0):
+def video_merge(reference_path: str, comparative_path: str, dest: str, threshold=None):
     """Compare two videos and synchronize them on common frames, 
         creating a single synchronized video
 
@@ -72,11 +79,18 @@ def video_merge(reference_path: str, comparative_path: str, dest: str, threshold
         dest (str): Destination of the merged video
         threshold (float, optional): Threshold used to detect scene change. 
                                     The smaller it is, the more scenes are detected. 
-                                    Defaults to 6.0.
+                                    Use None to automatically detect the optimal value.
+                                    Defaults to None.
     """
     # Local variables
     tmp_ref_dest = tempfile.mkdtemp()
     tmp_cmp_dest = tempfile.mkdtemp()
+    
+    # Get the optimal threshold
+    if threshold is None:
+        ref_t = find_optimal_threshold(reference_path)
+        cmp_t = find_optimal_threshold(comparative_path)
+        threshold = (ref_t + cmp_t) / 2
 
     # Split videos in scenes
     ref_scene_data = extract_scenes(reference_path, tmp_ref_dest, threshold)
