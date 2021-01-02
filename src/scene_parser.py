@@ -132,8 +132,7 @@ def _create_scenes_map(reference_data: List[SceneData], compare_data: List[Scene
         # (only after the join point, before is pointless as
         # there aren't (hopefully) duplicate scenes in the same video)
         if i >= len(reference_data):
-            duplicates = [item for item in scene_map if path in item]
-            if len(duplicates) > 0:
+            if sum(1 for item in scene_map if path in item):
                 continue
 
         # Search for the first duplicate (only if we are in
@@ -142,6 +141,10 @@ def _create_scenes_map(reference_data: List[SceneData], compare_data: List[Scene
             for cmpi in range(len(reference_data), len(timeline)):
                 # Unpack comparative data
                 (cmp_path, _,  cmp_hash) = timeline[cmpi]
+                
+                # Check if this scene is already in the scene_map
+                if sum(1 for item in scene_map if cmp_path in item):
+                    continue
 
                 # Check similarity between scenes
                 if compare_videohash(hash, cmp_hash, threshold=0.10):
