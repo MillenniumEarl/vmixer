@@ -48,7 +48,7 @@ def np_whash(array: np.array, scale=1) -> str:
     image = image.resize((width, height))
 
     # Calculate hash
-    hash = imagehash.whash(image, mode='db4')
+    hash = imagehash.phash(image)
     return str(hash)
 
 
@@ -72,7 +72,7 @@ def videohash_similarity(ref_hash_list: List[FrameHash], cmp_hash_list: List[Fra
     comparison = [hash for hash in cmp_hashes if hash in ref_hashes]
 
     # Elaborate similarity
-    similarity = len(comparison) / len(ref_hash_list)
+    similarity = len(comparison) / len(cmp_hash_list)
     similarity = min(similarity, 1.0)
     
     return similarity
