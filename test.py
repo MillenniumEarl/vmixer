@@ -23,7 +23,7 @@ print(f'Video similarity: {similarity * 100:.2f}%')
 if similarity > 0:
     video_merge(REFERENCE_FILE, COMPARE_FILE, MERGED_FILE, threshold)
     print('Video merged')
-    
+
 # Check similarity with original file
 if os.path.exists(ORIGINAL_FILE):
     similarity = video_similarity(ORIGINAL_FILE, MERGED_FILE, threshold)
