@@ -63,7 +63,7 @@ def videohash_similarity(ref_hash_list: List[FrameHash], cmp_hash_list: List[Fra
     Returns:
         float: Similarity index between 0 and 1
     """
-    
+
     # Local variables
     cmp_hashes = [item[1] for item in cmp_hash_list]
     ref_hashes = [item[1] for item in ref_hash_list]
@@ -74,7 +74,7 @@ def videohash_similarity(ref_hash_list: List[FrameHash], cmp_hash_list: List[Fra
     # Elaborate similarity
     similarity = len(comparison) / len(ref_hash_list)
     similarity = min(similarity, 1.0)
-    
+
     return similarity
 
 
