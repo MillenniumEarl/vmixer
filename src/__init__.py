@@ -4,8 +4,9 @@ import tempfile
 from typing import List, Tuple
 
 # Project modules
-from .video_utility import sync_video, whash_video, compare_video_hash
-from .scene_parser import extract_scenes, compare_scenes, sync_scenes
+from .utility import videohash_similarity
+from .video_utility import sync_video, whash_video
+from .scene_parser import extract_scenes, compare_scenes, sync_scenes, cache_dir
 
 # Aliases and types
 FrameHash = Tuple[float, str]
@@ -58,7 +59,7 @@ def video_hash_similarity(reference_hash_list: List[FrameHash], compare_hash_lis
     Returns:
         float: Video similarity index. Between 0 and 1
     """
-    return compare_video_hash(reference_hash_list, compare_hash_list)
+    return videohash_similarity(reference_hash_list, compare_hash_list)
 
 
 def video_merge(reference_path: str, comparative_path: str, dest: str, threshold=6.0):
