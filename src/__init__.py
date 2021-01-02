@@ -34,7 +34,7 @@ def video_similarity(reference_path: str, comparative_path: str, threshold=None)
     # Local variables
     tmp_ref_dest = tempfile.mkdtemp()
     tmp_cmp_dest = tempfile.mkdtemp()
-    
+
     # Get the optimal threshold
     if threshold is None:
         ref_t = find_optimal_threshold(reference_path)
@@ -85,7 +85,7 @@ def video_merge(reference_path: str, comparative_path: str, dest: str, threshold
     # Local variables
     tmp_ref_dest = tempfile.mkdtemp()
     tmp_cmp_dest = tempfile.mkdtemp()
-    
+
     # Get the optimal threshold
     if threshold is None:
         ref_t = find_optimal_threshold(reference_path)
