@@ -2,7 +2,7 @@
 import os
 
 # Project modules
-from src.__init__ import video_similarity, video_merge
+from vmixer.__init__ import video_similarity, video_merge
 
 # Constants
 BASE_PATH = os.path.join('test', 'A')
