@@ -30,7 +30,7 @@ def _extract_and_compare_scenes(ref_scene_data: List[SceneData], filename: str, 
 
     # Delete temp scenes
     shutil.rmtree(tmp_cmp_dest)
-    
+
     return (similarity, filename)
 
 
@@ -39,7 +39,7 @@ def _videohash_similarity_wrapper(reference_hash: List[FrameHash], compare_hash:
     return (index, similarity)
 
 
-def video_similarity(reference_path:str, *comparative_paths: str, threshold=None) -> List[VideoSimilarity]:
+def video_similarity(reference_path: str, *comparative_paths: str, threshold=None) -> List[VideoSimilarity]:
     """Compare multiple videos to find similarities. Returns a list of tuples,
         each containing the path to a comparative video and its similarity 
         with the reference video.
@@ -64,17 +64,18 @@ def video_similarity(reference_path:str, *comparative_paths: str, threshold=None
         ref_t = find_optimal_threshold(reference_path)
         cmp_ts = [find_optimal_threshold(path) for path in comparative_paths]
         threshold = (sum(cmp_ts) + ref_t) / (len(cmp_ts) + 1)
-    
+
     # Split reference videos in scenes
     tmp_ref_dest = tempfile.mkdtemp()
     ref_scene_data = extract_scenes(reference_path, tmp_ref_dest, threshold)
-    
+
     # Extract data in parallel
-    video_similarity = Parallel(n_jobs=-1, backend='threading')(delayed(_extract_and_compare_scenes)(ref_scene_data, path, threshold) for path in comparative_paths)
-        
+    video_similarity = Parallel(n_jobs=-1, backend='threading')(delayed(
+        _extract_and_compare_scenes)(ref_scene_data, path, threshold) for path in comparative_paths)
+
     # Delete reference temp path
     shutil.rmtree(tmp_ref_dest)
-        
+
     return video_similarity
 
 
@@ -90,21 +91,23 @@ def video_hash_similarity(reference_hash: List[str], *compare_hashes: List[str])
         List[ComparisonHash]: Comparison result, a list of tuple in 
                             the format (index of element in compare_hashes, similarity)
     """
-    
+
     # Recreate the lists
     ref_hash_list = [(0, hash) for hash in reference_hash]
-    cmp_hash_list = [[(0, hash) for hash in cmp_hash] for cmp_hash in compare_hashes]
-    
+    cmp_hash_list = [[(0, hash) for hash in cmp_hash]
+                     for cmp_hash in compare_hashes]
+
     # Define the backend used (need to be checked, 100 is random)
     backend = 'threading' if len(cmp_hash_list) <= 100 else None
-    
+
     # Obtains the hashes similarity
     comparison = Parallel(n_jobs=-2, backend=backend)(
-        delayed(_videohash_similarity_wrapper)(ref_hash_list, compare_hash, cmp_hash_list.index(compare_hash))
+        delayed(_videohash_similarity_wrapper)(ref_hash_list,
+                                               compare_hash, cmp_hash_list.index(compare_hash))
         for compare_hash in cmp_hash_list)
-    
+
     return comparison
-    
+
 
 def video_merge(reference_path: str, comparative_path: str, dest: str, threshold=None):
     """Compare two videos and synchronize them on common frames, 
@@ -122,7 +125,7 @@ def video_merge(reference_path: str, comparative_path: str, dest: str, threshold
     # Local variables
     tmp_ref_dest = tempfile.mkdtemp()
     tmp_cmp_dest = tempfile.mkdtemp()
-    
+
     # Get the optimal threshold
     if threshold is None:
         ref_t = find_optimal_threshold(reference_path)
