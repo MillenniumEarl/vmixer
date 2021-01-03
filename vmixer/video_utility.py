@@ -3,6 +3,7 @@ from typing import Tuple, List, Iterator
 
 # pip modules
 from moviepy.editor import VideoFileClip, concatenate_videoclips
+from joblib import Parallel, delayed
 
 # Project modules
 from .utility import np_phash, compare_videohash, videohash_similarity
@@ -94,6 +95,20 @@ def _find_sync_point(reference_data: List[FrameHash],
     return sync_point
 
 
+def _phash_video_helper(data: TimeFrame) -> FrameHash:
+    """Little helper function used with joblib to hash a frame
+
+    Args:
+        data (TimeFrame): Tuple containing the timestamp and the frame
+
+    Returns:
+        FrameHash: Tuple in the format (timestamp, frame hash)
+    """
+    (timestamp, frame) = data
+    hash = np_phash(frame)
+    return (timestamp, hash)
+
+
 def phash_video(filepath: str, frame_skip=3) -> List[FrameHash]:
     """Gets the perceptual hashes of the frames (and their timestamps) of a video.
 
@@ -104,16 +119,10 @@ def phash_video(filepath: str, frame_skip=3) -> List[FrameHash]:
     Returns:
         list[FrameHash]: List of tuples (timestamp, hash frame) of type (float, str)
     """
-
-    # Local variables
-    data_list = []
-    tuple_list = []
-
+    
     # Obtains both the frame and the timestamp of it
-    for data in _get_frame_list(filepath, frame_skip):
-        (timestamp, frame) = data
-        hash = np_phash(frame)
-        tuple_list.append((timestamp, hash))
+    tuple_list = Parallel(n_jobs=-2, backend='threading')(delayed(_phash_video_helper)(data)
+                                             for data in _get_frame_list(filepath, frame_skip))
 
     return tuple_list
 
