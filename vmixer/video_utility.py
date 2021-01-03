@@ -119,10 +119,10 @@ def phash_video(filepath: str, frame_skip=3) -> List[FrameHash]:
     Returns:
         list[FrameHash]: List of tuples (timestamp, hash frame) of type (float, str)
     """
-    
+
     # Obtains both the frame and the timestamp of it
     tuple_list = Parallel(n_jobs=-2, backend='threading')(delayed(_phash_video_helper)(data)
-                                             for data in _get_frame_list(filepath, frame_skip))
+                                                          for data in _get_frame_list(filepath, frame_skip))
 
     return tuple_list
 
