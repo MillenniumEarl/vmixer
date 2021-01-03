@@ -17,7 +17,7 @@ from moviepy.editor import VideoFileClip, concatenate_videoclips
 from joblib import Parallel, delayed
 
 # Project imports
-from .video_utility import whash_video, compare_video, sync_video
+from .video_utility import phash_video, compare_video, sync_video
 from .utility import md5, compare_videohash, videohash_similarity
 
 # Aliases and types
@@ -84,7 +84,7 @@ def _hash_scene(filename: str) -> SceneHash:
     index = int(scene_name)
 
     # Hash the scene
-    hash = whash_video(filename)
+    hash = phash_video(filename)
 
     return (filename, index, hash)
 

@@ -8,7 +8,7 @@ from joblib import Parallel, delayed
 
 # Project modules
 from .utility import videohash_similarity
-from .video_utility import sync_video, whash_video
+from .video_utility import sync_video, phash_video
 from .scene_parser import extract_scenes, compare_scenes, sync_scenes, cache_dir, find_optimal_threshold
 
 # Aliases and types
@@ -154,7 +154,7 @@ def video_hash(filename: str) -> List[str]:
         List[str]: List of hashes that identify the video
     """
     # Hash video
-    result = whash_video(filename)
+    result = phash_video(filename)
 
     # Fetch only the hash and not the timestamp
     return [item[1] for item in result]

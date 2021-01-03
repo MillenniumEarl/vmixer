@@ -94,8 +94,8 @@ def _find_sync_point(reference_data: List[FrameHash],
     return sync_point
 
 
-def whash_video(filepath: str, frame_skip=3) -> List[FrameHash]:
-    """Gets the wavelenghted perceptual hashes of the frames (and their timestamps) of a video.
+def phash_video(filepath: str, frame_skip=3) -> List[FrameHash]:
+    """Gets the perceptual hashes of the frames (and their timestamps) of a video.
 
     Args:
         filepath (str): Path to video
@@ -132,8 +132,8 @@ def compare_video(reference_path: str, video_path: str, frame_skip=5) -> float:
     """
 
     # Obtains the hash of the frames in the videos
-    reference_hash_list = whash_video(reference_path, frame_skip)
-    video_hash_list = whash_video(video_path, frame_skip)
+    reference_hash_list = phash_video(reference_path, frame_skip)
+    video_hash_list = phash_video(video_path, frame_skip)
 
     # Compare hashes
     return videohash_similarity(reference_hash_list, video_hash_list)
@@ -151,8 +151,8 @@ def sync_video(reference_path: str, compare_path: str, dest: str) -> bool:
         bool: Result of the operation
     """
     # Hash videos (perceptual)
-    ref_hash_list = whash_video(reference_path, frame_skip=1)
-    cmp_hash_list = whash_video(compare_path, frame_skip=1)
+    ref_hash_list = phash_video(reference_path, frame_skip=1)
+    cmp_hash_list = phash_video(compare_path, frame_skip=1)
 
     # Find sync point
     sync_point = _find_sync_point(ref_hash_list, cmp_hash_list)
