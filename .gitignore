@@ -1,2 +1,5 @@
 test/**/*
+build
+dist
+vmixer.egg-info
 __pycache__
