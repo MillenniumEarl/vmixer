@@ -29,10 +29,10 @@ def _get_frame_list(filepath: str, n=5) -> Iterator[TimeFrame]:
 
     with VideoFileClip(filepath) as clip:
         # Find the time interval after which to get a frame
-        
+
         # For some reason sometimes clip.fps >> actual fps (like fps = 90000)
         fps = min(clip.fps, 30)
-        
+
         frames = int(fps * clip.duration)
         time_for_frame = clip.duration / frames
         time_slice = time_for_frame * n
