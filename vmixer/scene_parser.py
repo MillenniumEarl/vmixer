@@ -90,27 +90,28 @@ def _hash_scene(filename: str) -> SceneHash:
 
 
 def _scene_sync_point(reference_data: List[SceneData], compare_data: List[SceneData]):
-    
+
     # Local variables
     similar_scenes = []
-    
+
     for ref_data in reference_data:
         (ref_path, _, ref_hash) = ref_data
-        
+
         for cmp_data in compare_data:
             (cmp_path, _, cmp_hash) = cmp_data
-            
+
             # Get the similarity index between video files
             similarity = videohash_similarity(ref_hash, cmp_hash)
-            
+
             if similarity > 0:
                 # Append the similarity point found
                 point = (ref_path, cmp_path)
                 similar_scenes.append((similarity, point))
-    
+
     # Sort for better matching
-    similar_scenes.sort(key=lambda element: element[0], reverse=True)  # Sorts in place
-    
+    similar_scenes.sort(
+        key=lambda element: element[0], reverse=True)  # Sorts in place
+
     return similar_scenes[0][1] if len(similar_scenes) > 0 else None
 
 
@@ -126,7 +127,7 @@ def _create_scenes_map_old(reference_data: List[SceneData], compare_data: List[S
                             to include in the final video. If the tuple contains two paths, 
                             the related videos must be merged
     """
-    
+
     # Local variables
     scene_map = []
     first_duplicate = False
@@ -173,7 +174,8 @@ def _create_scenes_map_old(reference_data: List[SceneData], compare_data: List[S
 
                 # Check similarity between scenes
                 if compare_videohash(hash, cmp_hash, threshold=0.1):
-                    print(f'{path} -> {cmp_path} : {videohash_similarity(hash, cmp_hash)}')
+                    print(
+                        f'{path} -> {cmp_path} : {videohash_similarity(hash, cmp_hash)}')
                     duplicate_found = True
 
                     # Append pair to scene_map
@@ -222,12 +224,11 @@ def _create_scenes_map(reference_data: List[SceneData], compare_data: List[Scene
                             to include in the final video. If the tuple contains two paths, 
                             the related videos must be merged
     """
-    
 
     # Local variables
     scene_map = []
     sync_value = _scene_sync_point(reference_data, compare_data)
-    
+
     if sync_value is None:
         # Simply merge both videos
         merged = reference_data + compare_data
@@ -235,13 +236,16 @@ def _create_scenes_map(reference_data: List[SceneData], compare_data: List[Scene
     else:
         # Obtains the indexes
         (ref_path, cmp_path) = sync_value
-        ref_index = reference_data.index([item for item in reference_data if ref_path in item][0])
-        cmp_index = compare_data.index([item for item in compare_data if cmp_path in item][0])
-        
+        ref_index = reference_data.index(
+            [item for item in reference_data if ref_path in item][0])
+        cmp_index = compare_data.index(
+            [item for item in compare_data if cmp_path in item][0])
+
         # Get the elements NOT synced
         first_part = [(item[0], None) for item in reference_data[:ref_index]]
-        second_part = [(item[0], None) for item in compare_data[cmp_index + 1:]]
-        
+        second_part = [(item[0], None)
+                       for item in compare_data[cmp_index + 1:]]
+
         scene_map = first_part + [sync_value] + second_part
 
     return scene_map
