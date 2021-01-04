@@ -72,7 +72,7 @@ def video_similarity(reference_path: str, *comparative_paths: str, threshold=Non
     ref_scene_data = extract_scenes(reference_path, tmp_ref_dest, threshold)
 
     # Extract data in parallel
-    similarity = Parallel(n_jobs=-1, backend='threading')(delayed(
+    similarity = Parallel(n_jobs=-1, prefer='threads')(delayed(
         _extract_and_compare_scenes)(ref_scene_data, path, threshold) for path in comparative_paths)
 
     # Delete reference temp path
@@ -100,10 +100,10 @@ def video_hash_similarity(reference_hash: List[str], *compare_hashes: List[str])
                      for cmp_hash in compare_hashes]
 
     # Define the backend used (need to be checked, 100 is random)
-    backend = 'threading' if len(cmp_hash_list) <= 100 else None
+    suggest_backend = 'threads' if len(cmp_hash_list) <= 100 else 'processes'
 
     # Obtains the hashes similarity
-    comparison = Parallel(n_jobs=-2, backend=backend)(
+    comparison = Parallel(n_jobs=-1, prefer=suggest_backend)(
         delayed(_videohash_similarity_wrapper)(ref_hash_list,
                                                compare_hash, cmp_hash_list.index(compare_hash))
         for compare_hash in cmp_hash_list)
