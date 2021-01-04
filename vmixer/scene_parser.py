@@ -287,12 +287,12 @@ def find_optimal_threshold(filename, frames_per_scene=30):
             val >= optimal_threshold for val in content_val_list)
 
         # Tune the threshold
-        if available_scenes == desired_scenes:
-            break
-        elif available_scenes < desired_scenes:
+        if available_scenes < desired_scenes:
             max_threshold = optimal_threshold
         elif available_scenes > desired_scenes:
             base_threshold = optimal_threshold
+        else: 
+            break
 
         # Save the current threshold value
         prec_value = optimal_threshold
