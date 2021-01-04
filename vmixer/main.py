@@ -8,8 +8,10 @@ from joblib import Parallel, delayed
 
 # Project modules
 from .utility import videohash_similarity
-from .video_utility import sync_video, phash_video
-from .scene_parser import extract_scenes, compare_scenes, sync_scenes, cache_dir, find_optimal_threshold
+from .video_utility import phash_video
+from .scene_parser import extract_scenes, compare_scenes, sync_scenes, find_optimal_threshold
+# skipcq: PYL-W0611
+from .scene_parser import cache_dir
 
 # Aliases and types
 FrameHash = Tuple[float, str]
