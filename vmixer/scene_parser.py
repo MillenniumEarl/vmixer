@@ -443,7 +443,7 @@ def compare_scenes(reference_data: List[SceneData], compare_data: List[SceneData
             pairs.append((ref_path, path))
 
     # Calculate similarity (how many files are similar)
-    similarity = count / len(reference_data)
+    similarity = count / len(compare_data)
     similarity = min(similarity, 1.0)
 
     return (similarity, pairs)
