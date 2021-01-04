@@ -435,7 +435,7 @@ def compare_scenes(reference_data: List[SceneData], compare_data: List[SceneData
         similar = uniques[0] if len(uniques) > 0 else None
 
         # Calculate similarity
-        if similar != None:
+        if similar is not None:
             (ref_path, _, _) = similar
             count += compare_video(path, ref_path)
             pairs.append((path, ref_path))
