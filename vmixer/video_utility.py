@@ -108,10 +108,10 @@ def phash_video(filepath: str, frame_skip=3) -> List[FrameHash]:
     Returns:
         list[FrameHash]: List of tuples (timestamp, hash frame) of type (float, str)
     """
-    
+
     # Local variables
     tuple_list = []
-    
+
     for data in _get_frame_list(filepath, frame_skip):
         (timestamp, frame) = data
         hash = np_phash(frame)
