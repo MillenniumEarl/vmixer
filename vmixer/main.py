@@ -70,13 +70,13 @@ def video_similarity(reference_path: str, *comparative_paths: str, threshold=Non
     ref_scene_data = extract_scenes(reference_path, tmp_ref_dest, threshold)
 
     # Extract data in parallel
-    video_similarity = Parallel(n_jobs=-1, backend='threading')(delayed(
+    similarity = Parallel(n_jobs=-1, backend='threading')(delayed(
         _extract_and_compare_scenes)(ref_scene_data, path, threshold) for path in comparative_paths)
 
     # Delete reference temp path
     shutil.rmtree(tmp_ref_dest)
 
-    return video_similarity
+    return similarity
 
 
 def video_hash_similarity(reference_hash: List[str], *compare_hashes: List[str]) -> List[ComparisonHash]:
