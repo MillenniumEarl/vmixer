@@ -267,7 +267,7 @@ def find_optimal_threshold(filename, frames_per_scene=30):
     # Read the CSV cache
     with open(cache_file, 'r') as f:
         #framerate = float(f.readline().rstrip('\n').split(',')[1])
-        f.readline() # Skip framerate
+        f.readline()  # Skip framerate
         csv_file = csv.DictReader(f)
         content_val_list = [float(row['content_val']) for row in csv_file]
 
@@ -291,7 +291,7 @@ def find_optimal_threshold(filename, frames_per_scene=30):
             max_threshold = optimal_threshold
         elif available_scenes > desired_scenes:
             base_threshold = optimal_threshold
-        else: 
+        else:
             break
 
         # Save the current threshold value
