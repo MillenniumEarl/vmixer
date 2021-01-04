@@ -397,7 +397,7 @@ def extract_scenes(video_path: str, output_dir: str, threshold=10.0) -> List[Sce
     # Calculate hash list
     pattern = os.path.join(output_dir, '*.mp4')
     hash_list = Parallel(n_jobs=-1, prefer='threads')(delayed(_hash_scene)(path)
-                                                         for path in glob.glob(pattern))
+                                                      for path in glob.glob(pattern))
     return hash_list
 
 
@@ -475,7 +475,7 @@ def sync_scenes(reference_data: List[SceneData], compare_data: List[SceneData], 
     # Merge chunks of clips until MAX_CLIP_AT_TIME remains
     while len(clip_paths) > MAX_CLIP_AT_TIME:
         chunk_clips_paths = Parallel(n_jobs=-1, prefer='processes')(delayed(_merge_chunk_clips)(chunk)
-                                                for chunk in _chunks(clip_paths, MAX_CLIP_AT_TIME))
+                                                                    for chunk in _chunks(clip_paths, MAX_CLIP_AT_TIME))
 
         # Add paths to list of deletable videos
         temp_video.extend(chunk_clips_paths)
