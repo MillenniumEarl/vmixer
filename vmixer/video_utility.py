@@ -69,14 +69,14 @@ def _find_sync_point(reference_data: List[FrameHash],
     sync_count = 0
 
     for i in reference_data:
-        (ref_ts, ref_hash) = i
+        (_, ref_hash) = i
 
         # Check if the number of sync frames are enough
         if sync_count == matching_frames:
             break
 
         for cmp in compare_data:
-            (ts, hash) = cmp
+            (_, hash) = cmp
 
             # Check if the number of sync frames are enough
             if sync_count == matching_frames:

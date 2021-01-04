@@ -255,7 +255,6 @@ def find_optimal_threshold(filename, frames_per_scene=30):
     # Local variables
     BASE_THRESHOLD = 5.0
     content_val_list = []
-    framerate = 0
 
     # Load cache
     filehash = md5(filename)
@@ -267,7 +266,8 @@ def find_optimal_threshold(filename, frames_per_scene=30):
 
     # Read the CSV cache
     with open(cache_file, 'r') as f:
-        framerate = float(f.readline().rstrip('\n').split(',')[1])
+        #framerate = float(f.readline().rstrip('\n').split(',')[1])
+        f.readline() # Skip framerate
         csv_file = csv.DictReader(f)
         content_val_list = [float(row['content_val']) for row in csv_file]
 
@@ -367,9 +367,6 @@ def extract_scenes(video_path: str, output_dir: str, threshold=10.0) -> List[Sce
     Returns:
         list[SceneData]: List of tuple in the format (scene path, scene index, perceptual video hashes)
     """
-
-    # Extract the video name
-    filename = os.path.basename(video_path)
 
     # Create the direcotry where to save the files
     if os.path.exists(output_dir):
