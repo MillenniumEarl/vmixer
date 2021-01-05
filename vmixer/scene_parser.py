@@ -422,11 +422,12 @@ def compare_scenes(reference_data: List[SceneData], compare_data: List[SceneData
         # Unpack data and search the hash in the reference list
         (path, _, hash) = data
 
-        # Get only the scenes similar to data with a minimum similarity, 
+        # Get only the scenes similar to data with a minimum similarity,
         # then sort the list and get the most similar element
-        similarity_map = [(videohash_similarity(item[2], hash), item) for item in reference_data]
+        similarity_map = [(videohash_similarity(item[2], hash), item)
+                          for item in reference_data]
         similarity_map = [item for item in similarity_map if item[0] > 0]
-        
+
         # Sort to get the most similar scene
         similarity_map.sort(key=lambda element: element[0])
 
@@ -438,7 +439,7 @@ def compare_scenes(reference_data: List[SceneData], compare_data: List[SceneData
             # Unpack data
             (similarity, data) = similar
             (ref_path, _, _) = data
-            
+
             count += similarity
             pairs.append((ref_path, path))
 

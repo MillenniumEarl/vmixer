@@ -100,7 +100,8 @@ def video_hash_similarity(reference_hash: List[str], *compare_hashes: List[str])
                      for cmp_hash in compare_hashes]
 
     # Define the backend used (need to be checked, 1000000 is random)
-    ops = len(set(reference_hash)) * sum(len(hashes) for hashes in compare_hashes)
+    ops = len(set(reference_hash)) * sum(len(hashes)
+                                         for hashes in compare_hashes)
     suggest_backend = 'threads' if ops <= 1000000 else 'processes'
 
     # Obtains the hashes similarity
