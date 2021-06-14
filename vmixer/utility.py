@@ -66,7 +66,7 @@ def videohash_similarity(ref_hash_list: List[FrameHash], cmp_hash_list: List[Fra
 
     # Local variables (remove duplicates as will slow down the process)
     cmp_hashes = [item[1] for item in cmp_hash_list]
-    ref_hashes = list(set([item[1] for item in ref_hash_list]))
+    ref_hashes = list({item[1] for item in ref_hash_list})
 
     # Count the hash matches
     comparison = [hash for hash in cmp_hashes if hash in ref_hashes]
