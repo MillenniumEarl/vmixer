@@ -1,6 +1,6 @@
 numpy==1.19.3
 ImageHash==4.2.0
-joblib==1.0.0
+joblib==1.2.0
 moviepy==1.0.3
 scenedetect==0.5.4.1
 auto_mix_prep==0.2.0
